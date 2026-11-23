@@ -9,10 +9,11 @@
 <style>
 /* VOICE: estudo rápido e alegre, como um caderno marcado com canetas marca-texto.
    IDEA: a frase é uma linha de caderno com lacunas; cada resposta "pinta" a lacuna com a cor da decisão
-   (verde = obrigatória, vermelho = proibida, amarelo = facultativa, azul = "há") e o tom da regra.
+   (roxo = obrigatória, cinza-chumbo = proibida, âmbar = facultativa, azul = "há") e o tom da regra.
+   Verde e vermelho ficam RESERVADOS para certo e errado (aviso grande, selo na lacuna, botões).
    COLOUR and TYPE: papel branco/tinta escura; Literata para a frase, Nunito para a interface.
    LAYOUT: placar no topo, frase grande, opções em botões numerados, legenda ao lado/abaixo. */
-:root{color-scheme:light dark;--bg:light-dark(#fbfaf7,#14151a);--card:light-dark(#ffffff,#1d1f26);--ink:light-dark(#1b1c22,#ecebe6);--mute:light-dark(#6b6d78,#9a9ca8);--line:light-dark(#e6e3da,#2d3039);--ok:#16a34a;--bad:#dc2626}
+:root{color-scheme:light dark;--bg:light-dark(#fbfaf7,#14151a);--card:light-dark(#ffffff,#1d1f26);--ink:light-dark(#1b1c22,#ecebe6);--mute:light-dark(#6b6d78,#9a9ca8);--line:light-dark(#e6e3da,#2d3039);--ok:#16a34a;--okd:#15803d;--bad:#dc2626}
 *{box-sizing:border-box;min-width:0}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 Nunito,system-ui,sans-serif;overflow-x:clip}
 button{font:inherit;color:inherit;cursor:pointer}
@@ -57,8 +58,19 @@ button:focus-visible,select:focus-visible{outline:3px solid #3b82f6;outline-offs
 .o:hover:not(:disabled){border-color:var(--sw);transform:translateY(-1px)}
 .o .k{flex:none;width:22px;height:22px;border-radius:6px;display:grid;place-items:center;font:800 12px Nunito,sans-serif;background:var(--sw);color:var(--swt)}
 .o:disabled{opacity:.3;cursor:default}
-.o.right{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 12%,var(--card));opacity:1}
-.o.picked{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 12%,var(--card));opacity:1}
+.o.right{border:3px solid var(--okd);background:color-mix(in srgb,var(--ok) 12%,var(--card));opacity:1}
+.o.right::after{content:'✓';margin-left:auto;font:800 20px Nunito,sans-serif;color:var(--okd)}
+.o.right.mine{background:var(--okd);color:#fff}.o.right.mine::after{color:#fff}
+.o.picked{border:3px solid var(--bad);background:var(--bad);color:#fff;opacity:1}
+.o.picked::after{content:'✗';margin-left:auto;font:800 20px Nunito,sans-serif;color:#fff}
+.verdict{flex-basis:100%;display:flex;align-items:center;gap:10px;font:800 21px/1.2 Nunito,sans-serif;padding:9px 14px;border-radius:10px;color:#fff}
+.verdict.ok{background:var(--okd)}.verdict.bad{background:var(--bad)}
+.verdict .vi{font-size:26px;line-height:1}.verdict .vd{font-weight:700;font-size:17px}.verdict .vp{margin-left:auto;font-size:17px}
+.verdict s{text-decoration-thickness:3px}
+.w{position:relative}
+.badge{position:absolute;top:-11px;right:-9px;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font:800 14px/1 Nunito,sans-serif;color:#fff;box-shadow:0 0 0 2px var(--card);z-index:1}
+.badge.ok{background:var(--okd)}.badge.bad{background:var(--bad)}
+.was{display:inline-block;background:var(--card);color:var(--bad);border-radius:6px;padding:0 5px;margin-right:6px;font-size:.8em;text-decoration:line-through 3px}
 .fb{min-height:58px;margin-top:14px;font-size:16px}
 .fb .box{border-radius:12px;padding:12px 14px;display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center}
 .fb .box.bad{background:color-mix(in srgb,var(--bad) 10%,var(--card));border:1px solid color-mix(in srgb,var(--bad) 40%,transparent)}
@@ -161,10 +173,10 @@ select{font:inherit;font-weight:700;border:1px solid var(--line);background:var(
 /*DADOS-INICIO (este bloco não usa o navegador: o script validar.js o executa no Node) */
 /* ================= DECISÕES, REGRAS, CORES ================= */
 const DEC = {
-  ob:{n:'Obrigatória',h:145,s:62,l:37,tip:'Alguém exige a preposição “a” E a palavra seguinte aceita o artigo “a”: a + a = à.'},
-  pr:{n:'Proibida',h:356,s:72,l:47,tip:'Falta uma das partes: ninguém pede a preposição, ou a palavra seguinte não aceita o artigo “a”.'},
+  ob:{n:'Obrigatória',h:272,s:50,l:50,tip:'Alguém exige a preposição “a” E a palavra seguinte aceita o artigo “a”: a + a = à.'},
+  pr:{n:'Proibida',h:215,s:16,l:42,tip:'Falta uma das partes: ninguém pede a preposição, ou a palavra seguinte não aceita o artigo “a”.'},
   fa:{n:'Facultativa',h:40,s:92,l:46,tip:'O artigo é opcional (possessivo, nome de pessoa, depois de “até”): com ou sem crase está certo.'},
-  ha:{n:'Há (verbo haver)',h:212,s:80,l:46,tip:'Tempo que já passou: troque por “faz”. Tempo futuro ou distância usam “a”.'}
+  ha:{n:'Há (verbo haver)',h:200,s:90,l:42,tip:'Tempo que já passou: troque por “faz”. Tempo futuro ou distância usam “a”.'}
 };
 const DORDER = ['ob','pr','fa','ha'];
 /* n = nome da regra; s = rótulo curto (aparece embaixo da lacuna); x = explicação + teste prático (aparece no erro);
@@ -774,6 +786,7 @@ function pickSentence(){
 /* ================= RENDER ================= */
 const shownForm=g=>g.shown||g.forms[0];
 const dispForm=(g,f)=>g.ti===0?cap(f):f;
+const badge=g=>g.res==='ok'?'<span class="badge ok" aria-label="certo">✓</span>':g.res==='bad'?'<span class="badge bad" aria-label="errado">✗</span>':'';
 function regOwner(ti){ return cur.gaps.find(g=>g.regShown&&g.reg.includes(ti)); }
 function renderSentence(){
   const H_=phase==='hunt'||phase==='huntfb';
@@ -787,7 +800,7 @@ function renderSentence(){
       } else txt=x.w+(x.tail||'');
       if(it){ if(phase==='hunt'){ cl+=' mk'+(hunt.marks.has(i)?' sel':''); attr=` data-i="${i}" role="button" tabindex="0" aria-pressed="${hunt.marks.has(i)}"`; lab=it.n<=10?String(it.n%10):''; }
         else if(it.fp) cl+=' badpick'; }
-      return `<span class="${cl}"${attr}><span class="t" style="${st}">${txt}</span><span class="lab">${lab}</span></span>`;
+      return `<span class="${cl}"${attr}>${phase==='huntfb'&&x.gap!==undefined?badge(cur.gaps[x.gap]):it&&it.fp?'<span class="badge bad" aria-label="errado">✗</span>':''}<span class="t" style="${st}">${txt}</span><span class="lab">${lab}</span></span>`;
     }
     if(x.gap!==undefined){
       const g=cur.gaps[x.gap]; let cl='w gap', st='', lab='', txt;
@@ -795,14 +808,15 @@ function renderSentence(){
       else { txt='?'; cl+=' pend'; }
       if(queue[qi]===x.gap&&(phase==='q'||phase==='reg')) cl+=' cur';
       if(g.miss) cl+=' wrong';
-      return `<span class="${cl}"><span class="t" style="${st}">${txt}</span><span class="lab">${lab}</span></span>`;
+      const was=g.rev&&g.pickWrong?`<s class="was" aria-label="sua resposta">${dispForm(g,g.pickWrong)}</s>`:'';
+      return `<span class="${cl}">${badge(g)}<span class="t" style="${st}">${was}${txt}</span><span class="lab">${lab}</span></span>`;
     }
     let cl='w', lab='', attr='', st='';
     const og=regOwner(i);
     if(og){ cl+=' rg'; st=`--rgc:${color(og.r).bg}`; lab='exige “a”'; }
     if(phase==='reg'){ cl+=' mk'; attr=` data-i="${i}" role="button" tabindex="0"`; if(numOf[i]) lab=String(numOf[i]%10); }
     if(regPick===i) cl+=' badpick';
-    return `<span class="${cl}"${attr} style="${st}"><span class="t">${x.w}${x.tail||''}</span><span class="lab">${lab}</span></span>`;
+    return `<span class="${cl}"${attr} style="${st}">${regPick===i?'<span class="badge bad" aria-label="errado">✗</span>':''}<span class="t">${x.w}${x.tail||''}</span><span class="lab">${lab}</span></span>`;
   }).join('');
 }
 const chip=(r,txt)=>{const c=color(r);return `<span class="chip" style="background:${c.bg};color:${c.fg}">${txt||pathLabel(r)}</span>`;};
@@ -835,16 +849,19 @@ function answerReg(ti){
     S.streak++; S.best=Math.max(S.best,S.streak);
     let pts=5+lv+Math.min(S.streak,20); if(hintUsed) pts=Math.ceil(pts/2); S.score+=pts;
     phase='regfb'; renderSentence(); updateHUD(); save();
-    $('fb').innerHTML=`<div class="box good"><b>+${pts}</b><span class="ex">${g.reg.length?`<b>${regWords(g)}</b> exige a preposição “a”.`:'Certo: nenhuma palavra exige o “a” aqui.'}</span>${goBtn('Continuar: a lacuna ⏎')}</div>`;
+    $('fb').innerHTML=`<div class="box good">${V(1,pts)}<span class="ex">${g.reg.length?`<b>${regWords(g)}</b> exige a preposição “a”.`:'Certo: nenhuma palavra exige o “a” aqui.'}</span>${goBtn('Continuar: a lacuna ⏎')}</div>`;
     armGo();
   } else {
     S.streak=0; regPick=ti>=0?ti:null; phase='regfb'; waiting=true; renderSentence(); updateHUD(); save();
     const why=g.reg.length?`Quem exige a preposição “a” é <b>${regWords(g)}</b>${ti>=0?` (não “${esc(ans)}”)`:''}.`:
       `${ti>=0?`“${esc(ans)}” não exige o “a” aqui. `:''}Nenhuma palavra exige o “a” nesta lacuna: pode ser locução, hora, tempo, ou o “a” é só artigo. Descubra na lacuna.`;
-    $('fb').innerHTML=`<div class="box bad"><span class="ex">${why}</span><button class="btn go" id="bGo">Continuar: a lacuna ⏎</button></div>`;
+    $('fb').innerHTML=`<div class="box bad">${V(0,0,ti>=0?`você marcou <s>${esc(ans)}</s>`:'você marcou <s>nenhuma</s>')}<span class="ex">${why}</span><button class="btn go" id="bGo">Continuar: a lacuna ⏎</button></div>`;
     $('bGo').onclick=next; focusGo();
   }
 }
+/* Aviso de certo/errado: sempre com símbolo e palavra, não só cor */
+function V(ok,pts,detail){ return ok?`<div class="verdict ok" role="status"><span class="vi">✓</span>Certo!${detail?` <span class="vd">${detail}</span>`:''}${pts?`<span class="vp">+${pts} pontos</span>`:''}</div>`
+  :`<div class="verdict bad" role="status"><span class="vi">✗</span>Errou${detail?` <span class="vd">${detail}</span>`:''}</div>`; }
 const focusGo=()=>setTimeout(()=>$('bGo')&&$('bGo').focus({preventScroll:true}),30);
 /* Sem avanço automático: depois de cada resposta o jogo espera o jogador clicar em "Próxima" (ou Enter/Espaço).
    Na última lacuna da frase, a frase inteira já aparece colorida e o botão leva direto à próxima frase. */
@@ -871,18 +888,18 @@ function answerForm(o){
   if(phase!=='q') return;
   const g=G(), lv=S.level, right=g.forms.includes(o);
   record(g,g.forms.join(' ou '),o,right,'forma');
-  g.rev=true; g.shown=right?o:g.forms[0]; phase='fb'; if(isLast()) finishSentence();
-  $('opts').querySelectorAll('.o').forEach(b=>{b.disabled=true;if(g.forms.includes(b.dataset.o))b.classList.add('right');else if(b.dataset.o===o)b.classList.add('picked');});
+  g.rev=true; g.shown=right?o:g.forms[0]; g.res=right?'ok':'bad'; if(!right) g.pickWrong=o; phase='fb'; if(isLast()) finishSentence();
+  $('opts').querySelectorAll('.o').forEach(b=>{b.disabled=true;if(g.forms.includes(b.dataset.o))b.classList.add('right');else if(b.dataset.o===o)b.classList.add('picked');if(b.dataset.o===o)b.classList.add('mine');});
   $('bHint').disabled=true;
   const both=g.forms.length>1?`As duas formas estão certas: <b>${g.forms.join('</b> ou <b>')}</b>. `:'';
   if(right){
     S.streak++; S.best=Math.max(S.best,S.streak);
     let pts=10+2*lv+Math.min(S.streak,20); if(hintUsed) pts=Math.ceil(pts/2); S.score+=pts;
-    $('fb').innerHTML=`<div class="box good"><b>+${pts}</b> ${chip(g.r)}<span class="ex">${both}${g.nt?g.nt+'.':''}</span>${goBtn()}</div>`;
+    $('fb').innerHTML=`<div class="box good">${V(1,pts)} ${chip(g.r)}<span class="ex">${both}${g.nt?g.nt+'.':''}</span>${goBtn()}</div>`;
     renderSentence(); updateHUD(); save(); armGo();
   } else {
     S.streak=0; g.miss=true; waiting=true;
-    $('fb').innerHTML=`<div class="box bad"><span>Correto: <b>${g.forms.map(f=>dispForm(g,f)).join(' ou ')}</b> →</span> ${chip(g.r)}<span class="ex">${both}${explain(g)}</span>${goBtn()}</div>`;
+    $('fb').innerHTML=`<div class="box bad">${V(0,0,`você marcou <s>${dispForm(g,o)}</s> · o certo é <b>${g.forms.map(f=>dispForm(g,f)).join(' ou ')}</b>`)} ${chip(g.r)}<span class="ex">${both}${explain(g)}</span>${goBtn()}</div>`;
     $('bGo').onclick=next; renderSentence(); updateHUD(); save(); focusGo();
   }
   checkLevel();
@@ -912,19 +929,19 @@ function answerTree(o){
   const pick=tpick.map(keyLabel).join(' › ');
   if(o===correct){
     tstep++;
-    if(tstep===1&&RBY[d].length>1){ $('fb').innerHTML=`<div class="box good"><span class="crumbs">${DEC[d].n} ✓</span></div>`; return askTree(); }
+    if(tstep===1&&RBY[d].length>1){ $('fb').innerHTML=`<div class="box good"><span class="crumbs"><b style="color:var(--okd)">✓ ${DEC[d].n}: certo!</b> Agora a regra.</span></div>`; return askTree(); }
     record(g,pathLabel(g.r),pick,true,'arvore');
-    g.rev=true; phase='fb'; if(isLast()) finishSentence(); S.streak++; S.best=Math.max(S.best,S.streak);
+    g.rev=true; g.res='ok'; phase='fb'; if(isLast()) finishSentence(); S.streak++; S.best=Math.max(S.best,S.streak);
     let pts=Math.round((10+2*lv+Math.min(S.streak,20))*1.5); if(hintUsed) pts=Math.ceil(pts/2); S.score+=pts;
-    $('opts').querySelectorAll('.o').forEach(b=>{b.disabled=true;if(b.dataset.o===o)b.classList.add('right');});
+    $('opts').querySelectorAll('.o').forEach(b=>{b.disabled=true;if(b.dataset.o===o)b.classList.add('right','mine');});
     const both=g.forms.length>1?` · vale <b>${g.forms.join('</b> ou <b>')}</b>`:'';
-    $('fb').innerHTML=`<div class="box good"><b>+${pts}</b> ${chip(g.r)}<span class="ex">“${dispForm(g,g.forms[0])}”${both}${g.nt?' · '+g.nt:''}</span>${goBtn()}</div>`;
+    $('fb').innerHTML=`<div class="box good">${V(1,pts)} ${chip(g.r)}<span class="ex">“${dispForm(g,g.forms[0])}”${both}${g.nt?' · '+g.nt:''}</span>${goBtn()}</div>`;
     renderSentence(); updateHUD(); save(); armGo();
   } else {
     record(g,pathLabel(g.r),pick,false,'arvore');
-    g.rev=true; g.miss=true; phase='fb'; if(isLast()) finishSentence(); S.streak=0; waiting=true;
-    $('opts').querySelectorAll('.o').forEach(b=>{b.disabled=true;if(b.dataset.o===correct)b.classList.add('right');else if(b.dataset.o===o)b.classList.add('picked');});
-    $('fb').innerHTML=`<div class="box bad"><span>Correto: <b>${g.forms.map(f=>dispForm(g,f)).join(' ou ')}</b> →</span> ${chip(g.r)}<span class="ex">Você escolheu: ${pick}.<br>${explain(g)}</span>${goBtn()}</div>`;
+    g.rev=true; g.miss=true; g.res='bad'; phase='fb'; if(isLast()) finishSentence(); S.streak=0; waiting=true;
+    $('opts').querySelectorAll('.o').forEach(b=>{b.disabled=true;if(b.dataset.o===correct)b.classList.add('right');else if(b.dataset.o===o)b.classList.add('picked','mine');});
+    $('fb').innerHTML=`<div class="box bad">${V(0,0,`você escolheu <s>${keyLabel(o)}</s> · a lacuna é <b>${g.forms.map(f=>dispForm(g,f)).join(' ou ')}</b>`)} ${chip(g.r)}<span class="ex">Você escolheu: ${pick}.<br>${explain(g)}</span>${goBtn()}</div>`;
     $('bGo').onclick=next; renderSentence(); updateHUD(); save(); focusGo();
   }
   $('bHint').disabled=true;
@@ -965,15 +982,15 @@ function answerWrite(txt){
   if(!txt.trim()){ $('wIn').focus(); return; }
   const g=G(), lv=S.level, res=checkWrite(txt,g.r);
   record(g,pathLabel(g.r),txt.trim(),res.ok,'escrita');
-  g.rev=true; phase='fb'; if(isLast()) finishSentence(); wmode=false; $('wIn').disabled=true; $('bHint').disabled=true;
+  g.rev=true; g.res=res.ok?'ok':'bad'; phase='fb'; if(isLast()) finishSentence(); wmode=false; $('wIn').disabled=true; $('bHint').disabled=true;
   if(res.ok){
     S.streak++; S.best=Math.max(S.best,S.streak);
     let pts=2*(10+2*lv+Math.min(S.streak,20)); if(hintUsed) pts=Math.ceil(pts/2); S.score+=pts;
-    $('fb').innerHTML=`<div class="box good"><b>+${pts}</b> ${chip(g.r)}<span class="ex">“${dispForm(g,g.forms[0])}”${res.near?' · aceito, mas confira a grafia':''}${g.nt?' · '+g.nt:''}</span>${goBtn()}</div>`;
+    $('fb').innerHTML=`<div class="box good">${V(1,pts)} ${chip(g.r)}<span class="ex">“${dispForm(g,g.forms[0])}”${res.near?' · aceito, mas confira a grafia':''}${g.nt?' · '+g.nt:''}</span>${goBtn()}</div>`;
     renderSentence(); updateHUD(); save(); armGo();
   } else {
     S.streak=0; g.miss=true; waiting=true;
-    $('fb').innerHTML=`<div class="box bad"><span>Correto: <b>${g.forms.map(f=>dispForm(g,f)).join(' ou ')}</b> →</span> ${chip(g.r)}<span class="ex">Você escreveu: “${esc(txt.trim())}”. ${res.decOk?'<b>A decisão está certa</b>, mas faltou a regra. ':''}Esta regra volta a ser treinada com opções.<br>${explain(g)}</span>${goBtn()}</div>`;
+    $('fb').innerHTML=`<div class="box bad">${V(0,0,`a regra é <b>${RULES[g.r].n}</b>`)} ${chip(g.r)}<span class="ex">A lacuna é <b>${g.forms.map(f=>dispForm(g,f)).join(' ou ')}</b>. Você escreveu: “${esc(txt.trim())}”. ${res.decOk?'<b>A decisão está certa</b>, mas faltou a regra. ':''}Esta regra volta a ser treinada com opções.<br>${explain(g)}</span>${goBtn()}</div>`;
     $('bGo').onclick=next; renderSentence(); updateHUD(); save(); focusGo();
   }
   checkLevel();
@@ -1012,7 +1029,7 @@ function confirmHunt(){
     if(it.gi!==undefined){ const g=cur.gaps[it.gi], ok=marked===g.hwrong;
       record(g,g.hwrong?`trocar “${g.hshown}” por “${g.forms.join(' ou ')}”`:`“${g.hshown}” está certo`,marked?'marcou':'não marcou',ok,'caca');
       g.rev=true; g.shown=g.forms.includes(g.hshown)?g.hshown:g.forms[0];
-      if(ok) good++; else { g.miss=true;
+      g.res=ok?'ok':'bad'; if(ok) good++; else { g.miss=true;
         msgs.push(g.hwrong?`<b>“${g.hshown}”</b> está errado: o certo é <b>${g.forms.join(' ou ')}</b> ${chip(g.r)} ${RULES[g.r].x}${g.nt?' '+g.nt+'.':''}`:
           `<b>“${g.hshown}”</b> estava certo ${chip(g.r)} ${g.forms.length>1?'(facultativa: as duas formas valem)':RULES[g.r].x}`); }
     } else if(marked){ it.fp=true; const w=cur.toks[it.ti].w;
@@ -1024,11 +1041,11 @@ function confirmHunt(){
   phase='huntfb'; $('opts').innerHTML=''; finishSentence();
   if(!msgs.length){ S.streak+=good; S.best=Math.max(S.best,S.streak); const pts=good*(12+2*lv); S.score+=pts;
     const nErr=cur.gaps.filter(g=>g.hwrong).length;
-    $('fb').innerHTML=`<div class="box good"><b>+${pts}</b><span class="ex">${nErr?`Achou ${nErr===1?'o erro':'os '+nErr+' erros'}!`:'Certo: a frase não tinha erro.'}</span>${goBtn()}</div>`;
+    $('fb').innerHTML=`<div class="box good">${V(1,pts)}<span class="ex">${nErr?`Achou ${nErr===1?'o erro':'os '+nErr+' erros'}!`:'Certo: a frase não tinha erro.'}</span>${goBtn()}</div>`;
     renderSentence(); updateHUD(); save(); armGo();
   } else {
     S.streak=0; waiting=true; renderSentence(); updateHUD(); save();
-    $('fb').innerHTML=`<div class="box bad"><span class="ex">${msgs.join('<br>')}</span>${goBtn()}</div>`;
+    $('fb').innerHTML=`<div class="box bad">${V(0,0,msgs.length===1?'1 engano':msgs.length+' enganos')}<span class="ex">${msgs.join('<br>')}</span>${goBtn()}</div>`;
     $('bGo').onclick=next; focusGo();
   }
   checkLevel();

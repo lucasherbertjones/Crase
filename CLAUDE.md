@@ -19,8 +19,8 @@ Aprender a usar a crase corretamente no menor tempo possível: **muitas repetiç
   código de DOM dentro dele.
 
 ## Árvore de classificação
-Duas etapas: **decisão** (`DEC`: `ob` obrigatória = verde, `pr` proibida = vermelho, `fa` facultativa =
-amarelo, `ha` "há" = azul) → **regra** (`RULES`, 22 no total; cada regra tem um tom da cor da decisão).
+Duas etapas: **decisão** (`DEC`: `ob` obrigatória = roxo, `pr` proibida = cinza-chumbo, `fa` facultativa =
+âmbar, `ha` "há" = azul) → **regra** (`RULES`, 22 no total; cada regra tem um tom da cor da decisão).
 - Obrigatória: `ob.art` preposição + artigo feminino · `ob.loc` locução feminina · `ob.hora` hora exata ·
   `ob.moda` "à moda de" (mesmo oculta) · `ob.dem` a + aquele/aquela/aquilo · `ob.rel` a + a qual/as quais ·
   `ob.lugar` lugar que aceita artigo (volto da) · `ob.casa` casa/terra especificada (e a Terra, planeta).
@@ -57,8 +57,8 @@ Uma frase por linha:
    teclas 1–9. Acertou: a palavra fica sublinhada com a cor da regra ("exige “a”"). Errou: mostra quem
    exige, sem entregar a regra. Nos dois casos, "Continuar: a lacuna" leva ao passo 2. Opção "direto à lacuna" no menu. O passo 1 entra no
    histórico e nas estatísticas, mas não no domínio nem na subida de nível.
-2. **Passo 2, níveis 1–6: escolher a forma.** Botões coloridos pela forma (à/às/àquele = verde, a/as/aquele
-   = vermelho, há = azul). Opções por nível: 1–2 a/à; 3–4 a/à/as/às; 5+ incluem há. "Aquele" e "a qual"
+2. **Passo 2, níveis 1–6: escolher a forma.** Botões coloridos pela forma (à/às/àquele = roxo, a/as/aquele
+   = cinza, há = azul). Opções por nível: 1–2 a/à; 3–4 a/à/as/às; 5+ incluem há. "Aquele" e "a qual"
    têm opções próprias (aquele/àquele; a qual/à qual/as quais/às quais); `pr.plural` só a/à.
    Facultativa: qualquer forma válida conta como acerto, e o feedback avisa que as duas valem.
 3. **Regras por nível** (`POOL`): 1 = `ob.art` × `pr.masc`; 2 = + verbo, pronome, sem preposição;
@@ -80,13 +80,20 @@ Uma frase por linha:
    nota da frase e quem exige o "a". Na última lacuna, a frase inteira já aparece colorida e o botão vira
    "Próxima frase" (`finishSentence`, `goBtn`, `armGo`). Só a passagem decisão → regra da árvore é imediata,
    porque é a mesma pergunta. Não reintroduzir `setTimeout(next, …)`.
-8. **Domínio por etapas**: 5→3→2→1→1→1 acertos seguidos pulam a regra 5→10→20→40→80→160 vezes; erro volta
+8. **Certo/errado inconfundível** (pedido de uma jogadora que não percebia se tinha acertado).
+   **Verde e vermelho são reservados para certo e errado**; por isso as decisões NÃO usam essas cores
+   (antes "obrigatória" era verde e "proibida" vermelha, e um "a" certo aparecia vermelho, parecendo erro).
+   Depois de cada resposta: faixa grande `V()` com símbolo e palavra ("✓ Certo! +13 pontos" ou
+   "✗ Errou · você marcou ~~a~~ · o certo é à"); selo ✓/✗ no canto da lacuna (`badge`, `g.res`); no erro, a
+   escolha da pessoa riscada dentro da lacuna (`g.pickWrong`); botão escolhido cheio de verde ✓ ou vermelho ✗ e
+   a opção certa com borda verde ✓. Sempre símbolo + palavra, não só cor (daltonismo).
+9. **Domínio por etapas**: 5→3→2→1→1→1 acertos seguidos pulam a regra 5→10→20→40→80→160 vezes; erro volta
    ao início; mais de 5 dias sem responder faz voltar; acerto com dica não conta. Chaves por regra e modo:
    `F:regra` (forma) e `A:regra` (árvore e escrita). Domínio por regra, não por frase.
-9. **Histórico**: `[data, idFrase, nºLacuna, regra, respostaCerta, resposta, acerto, nível, modo, dica]`,
+10. **Histórico**: `[data, idFrase, nºLacuna, regra, respostaCerta, resposta, acerto, nível, modo, dica]`,
    modos `regente`, `forma`, `arvore`, `escrita`, `caca`. Estatísticas por decisão e regra, domínio,
    "lacunas para revisar" e "Copiar CSV".
-10. **Teclado**: 1–9 e 0 respondem/marcam, Enter/Espaço continuam, H dica, L legenda. Proteção contra clique
+11. **Teclado**: 1–9 e 0 respondem/marcam, Enter/Espaço continuam, H dica, L legenda. Proteção contra clique
     duplo (320 ms) só no mouse/toque.
 
 ## Decisões de gramática (o que ficou de fora ou foi explicado em nota)

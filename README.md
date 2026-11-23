@@ -5,7 +5,8 @@ Jogo para aprender a usar a crase (a, à, as, às, há, àquele, à qual) na nor
 **Jogar:** https://lucasherbertjones.github.io/Crase/ (depois de ativar o GitHub Pages)
 
 - 326 frases revisadas, com 22 regras e pelo menos 9 exemplos de cada uma
-- Cores fixas por decisão: verde = obrigatória, vermelho = proibida, amarelo = facultativa, azul = "há"
+- Cores fixas por decisão: roxo = obrigatória, cinza = proibida, âmbar = facultativa, azul = "há"
+- Verde e vermelho só aparecem para dizer se você acertou ou errou
 - Método recomendado: primeiro achar quem exige a preposição "a", depois ver se a palavra aceita o artigo
 - 12 níveis: de "a" ou "à" até escrever a regra por extenso e caçar acentos errados
 - O que você já domina é pulado por mais tempo a cada acerto e volta de vez em quando para conferir
