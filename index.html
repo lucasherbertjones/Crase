@@ -1,0 +1,1262 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Crase</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,500;7..72,700&family=Nunito:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+/* VOICE: estudo rápido e alegre, como um caderno marcado com canetas marca-texto.
+   IDEA: a frase é uma linha de caderno com lacunas; cada resposta "pinta" a lacuna com a cor da decisão
+   (verde = obrigatória, vermelho = proibida, amarelo = facultativa, azul = "há") e o tom da regra.
+   COLOUR and TYPE: papel branco/tinta escura; Literata para a frase, Nunito para a interface.
+   LAYOUT: placar no topo, frase grande, opções em botões numerados, legenda ao lado/abaixo. */
+:root{color-scheme:light dark;--bg:light-dark(#fbfaf7,#14151a);--card:light-dark(#ffffff,#1d1f26);--ink:light-dark(#1b1c22,#ecebe6);--mute:light-dark(#6b6d78,#9a9ca8);--line:light-dark(#e6e3da,#2d3039);--ok:#16a34a;--bad:#dc2626}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 Nunito,system-ui,sans-serif;overflow-x:clip}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,select:focus-visible{outline:3px solid #3b82f6;outline-offset:2px}
+.top{display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px;padding:12px max(4vw,14px);border-bottom:1px solid var(--line);background:var(--card)}
+.top h1{font:700 20px/1.1 Literata,serif;margin:0 auto 0 0}
+.stat{display:flex;flex-direction:column;align-items:flex-end;line-height:1.1}
+.stat b{font-size:19px;font-variant-numeric:tabular-nums}.stat span{font-size:12px;color:var(--mute)}
+.tb{display:flex;gap:6px}
+.btn{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:8px 12px;min-height:40px;font-weight:700;font-size:14px}
+.btn:hover{border-color:var(--mute)}
+.btn:disabled{opacity:.45;cursor:default}
+.wrap{max-width:1240px;margin:0 auto;padding:clamp(14px,3vw,32px) max(4vw,14px);display:grid;grid-template-columns:minmax(0,1fr) 290px;gap:24px}
+.wrap.nolegend{grid-template-columns:minmax(0,1fr)}.wrap.nolegend .legend{display:none}
+.lvl{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px;font-size:14px;color:var(--mute)}
+.lvl strong{color:var(--ink)}
+.bar{flex:1 1 140px;height:8px;border-radius:9px;background:var(--line);overflow:hidden;max-width:260px}
+.bar i{display:block;height:100%;background:var(--ok);transition:width .3s}
+.paper{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:clamp(18px,3vw,34px);box-shadow:0 10px 30px -18px #0004}
+.sent{display:flex;flex-wrap:wrap;align-items:flex-start;gap:14px 9px;min-height:120px;font:500 clamp(24px,4.2vw,38px)/1.2 Literata,serif}
+.w{display:inline-flex;flex-direction:column;align-items:center;gap:3px}
+.w .t{padding:2px 6px;border-radius:9px;border:2px solid transparent;transition:background .25s,color .25s,transform .2s}
+.w .lab{font:700 11px/1.1 Nunito,sans-serif;color:var(--mute);min-height:12px;max-width:130px;text-align:center}
+.w.gap .t{padding:2px 10px;min-width:2.6em;text-align:center}
+.w.gap.pend .t{border:2px dashed var(--mute);color:var(--mute)}
+.w.cur .t{border-color:var(--ink);border-style:dashed;animation:pulse 1.1s ease-in-out infinite}
+.w.skip .t{opacity:.55}
+.w.wrong .t{box-shadow:0 0 0 3px var(--bad)}
+.w.rg .t{box-shadow:inset 0 -5px 0 var(--rgc)}
+.w.rg .lab{color:var(--ink)}
+.w.badpick .t{box-shadow:0 0 0 3px var(--bad)}
+.p{font:500 clamp(24px,4.2vw,38px)/1.2 Literata,serif;margin-left:-9px;padding-top:2px}
+@keyframes pulse{50%{transform:translateY(-2px)}}
+@media (prefers-reduced-motion:reduce){.w.cur .t{animation:none}.w .t{transition:none}}
+.q{margin:22px 0 12px;font-size:18px;display:flex;flex-wrap:wrap;gap:6px 12px;align-items:baseline}
+.q b{font:700 22px Literata,serif}
+.q .mode{font-size:12px;font-weight:800;padding:2px 8px;border-radius:20px;background:var(--line);color:var(--mute)}
+.opts{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px}
+.opts.forms{grid-template-columns:repeat(auto-fill,minmax(120px,1fr))}
+.opts.forms .o{font:700 22px Literata,serif;justify-content:flex-start}
+.o{display:flex;align-items:center;gap:10px;text-align:left;border:2px solid var(--line);background:var(--card);border-radius:12px;padding:9px 12px;min-height:48px;font-weight:700;font-size:15px;transition:transform .08s}
+.o:hover:not(:disabled){border-color:var(--sw);transform:translateY(-1px)}
+.o .k{flex:none;width:22px;height:22px;border-radius:6px;display:grid;place-items:center;font:800 12px Nunito,sans-serif;background:var(--sw);color:var(--swt)}
+.o:disabled{opacity:.3;cursor:default}
+.o.right{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 12%,var(--card));opacity:1}
+.o.picked{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 12%,var(--card));opacity:1}
+.fb{min-height:58px;margin-top:14px;font-size:16px}
+.fb .box{border-radius:12px;padding:12px 14px;display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center}
+.fb .box.bad{background:color-mix(in srgb,var(--bad) 10%,var(--card));border:1px solid color-mix(in srgb,var(--bad) 40%,transparent)}
+.fb .box.good{background:color-mix(in srgb,var(--ok) 10%,var(--card));border:1px solid color-mix(in srgb,var(--ok) 35%,transparent)}
+.fb .box.hint{background:var(--bg);border:1px dashed var(--line)}
+.fb .ex{flex:1 1 300px}
+.chip{display:inline-block;padding:1px 8px;border-radius:7px;font-weight:800;font-size:14px}
+.go{margin-left:auto}
+.go.btn{background:var(--ink);color:var(--card);border-color:var(--ink)}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;align-items:center;font-size:13px;color:var(--mute)}
+kbd{font:700 12px Nunito;border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:0 5px;background:var(--card)}
+.legend{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;align-self:start;position:sticky;top:12px;font-size:14px}
+.legend h2{font:700 16px Literata,serif;margin:0 0 10px}
+.legend details{border-top:1px solid var(--line);padding:6px 0}
+.legend summary{display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:800;list-style:none}
+.legend summary::-webkit-details-marker{display:none}
+.dot{width:14px;height:14px;border-radius:4px;flex:none}
+.legend ul{list-style:none;margin:6px 0 2px 22px;padding:0;display:grid;gap:3px}
+.legend li{display:flex;gap:7px;align-items:center;font-size:13px}
+.legend .tip{font-size:12.5px;color:var(--mute);margin:4px 0 2px 22px}
+.legend .method{font-size:12.5px;color:var(--mute);margin:10px 0 0;border-top:1px solid var(--line);padding-top:8px}
+.toast{position:fixed;left:50%;top:18px;transform:translate(-50%,-140%);opacity:0;background:var(--ink);color:var(--card);padding:12px 18px;border-radius:12px;font-weight:800;transition:transform .35s;z-index:9;max-width:92vw;text-align:center}
+.toast.on{transform:translate(-50%,0);opacity:1}
+.modal{position:fixed;inset:0;background:#0007;display:none;place-items:center;z-index:8;padding:14px}
+.modal.on{display:grid}
+.mbox{background:var(--card);border-radius:18px;padding:22px;width:min(680px,100%);max-height:90vh;overflow:auto}
+.mbox h2{font:700 24px Literata,serif;margin:0 0 12px}
+.srow{display:grid;grid-template-columns:minmax(110px,230px) minmax(0,1fr) 90px;gap:10px;align-items:center;padding:4px 0;font-size:14px}
+.srow .num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.srow span:first-child{overflow-wrap:anywhere}
+.sbar{height:10px;border-radius:9px;background:var(--line);overflow:hidden}.sbar i{display:block;height:100%}
+.miss{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+select{font:inherit;font-weight:700;border:1px solid var(--line);background:var(--card);border-radius:10px;padding:6px 8px;min-height:40px}
+.done{font:700 14px Nunito;color:var(--mute)}
+.sent,.opts,.fb .go{-webkit-user-select:none;user-select:none;touch-action:manipulation}
+.mode.wr{background:#dbeafe;color:#1e3a8a}
+.mode.rev{background:#fde68a;color:#78350f}
+.mode.hunt{background:#fce7f3;color:#831843}
+.wform{display:flex;flex-wrap:wrap;gap:8px;grid-column:1/-1}
+.wform input{flex:1 1 280px;font:600 17px Nunito,sans-serif;min-height:50px;padding:10px 14px;border:2px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink)}
+.wform input:focus{outline:none;border-color:#3b82f6}
+.wform .go{margin-left:0;min-height:50px}
+.crumbs{flex-basis:100%;font-size:15px;color:var(--mute)}.crumb{font-weight:800;color:var(--ink)}
+.w.mk{cursor:pointer}.w.mk .t{border:2px dashed var(--line)}.w.mk:hover .t{border-color:var(--mute)}
+.w.mk.sel .t{background:color-mix(in srgb,var(--bad) 16%,var(--card));border:2px solid var(--bad)}
+.w.mk .lab{font-size:12px;color:var(--mute)}
+.hwrap{max-height:340px;overflow:auto;border:1px solid var(--line);border-radius:12px;margin-top:8px}
+.htab{width:100%;border-collapse:collapse;font-size:14px}.htab th{position:sticky;top:0;background:var(--card);text-align:left;padding:8px;font-size:12px;color:var(--mute)}
+.htab td{padding:7px 8px;border-top:1px solid var(--line);vertical-align:top}.htab td:first-child{white-space:nowrap;color:var(--mute);font-size:12.5px}
+.htab .hs{font-size:12px;color:var(--mute)}.hok td:last-child{color:var(--ok);font-weight:800}.herr td:last-child{color:var(--bad);font-weight:800}
+.htxt{width:100%;height:120px;margin-top:8px;font:12px monospace}
+@media(max-width:600px){.htab{font-size:13px}.stack thead{display:none}.stack tr{display:grid;padding-block:8px}.stack td{display:flow-root;border:0;padding:2px 8px;padding-inline-start:8.5em}.stack td::before{content:attr(data-l);float:inline-start;width:8em;margin-inline-start:-8em;font-size:12px;color:var(--mute)}.stack td:empty{display:none}}
+@media(max-width:900px){.wrap{grid-template-columns:minmax(0,1fr)}.legend{position:static}}
+@media(max-width:600px){.stat span{font-size:11px}.stat b{font-size:16px}.top h1{flex-basis:100%}.opts{grid-template-columns:repeat(2,minmax(0,1fr))}.o{font-size:14px;padding:8px}.sent{gap:10px 6px}.p{margin-left:-6px}}
+</style>
+<script>new MutationObserver(()=>{for(const c of document.querySelectorAll('.stack td:not([data-l])')){let i=0,p=c;while(p=p.previousElementSibling)i+=p.colSpan;c.dataset.l=c.closest('table').rows[0].cells[i]?.textContent||''}}).observe(document,{childList:true,subtree:true})</script>
+</head>
+<body>
+<header class="top">
+  <h1>Crase</h1>
+  <div class="stat"><b id="sScore">0</b><span>pontos</span></div>
+  <div class="stat"><b id="sStreak">0</b><span>sequência</span></div>
+  <div class="stat"><b id="sAcc">–</b><span>precisão</span></div>
+  <div class="stat"><b id="sSent">0</b><span>frases</span></div>
+  <div class="tb">
+    <button class="btn" id="bLeg" title="Legenda (L)">Legenda</button>
+    <button class="btn" id="bStats">Estatísticas</button>
+  </div>
+</header>
+
+<main class="wrap" id="wrap">
+  <section>
+    <div class="lvl">
+      <span>Nível <strong id="lvNum">1</strong> · <span id="lvName"></span></span>
+      <div class="bar" title="Acertos nas últimas 20 respostas deste nível"><i id="lvBar" style="width:0"></i></div>
+      <span id="lvInfo"></span>
+      <select id="lvSel" aria-label="Escolher nível"></select>
+      <select id="ordSel" aria-label="Ordem"><option value="regente">Ordem: primeiro quem exige o “a” (recomendada)</option><option value="direto">Ordem: direto à lacuna</option></select>
+    </div>
+    <div class="paper">
+      <div class="sent" id="sent" aria-live="polite"></div>
+      <div class="q" id="q"></div>
+      <div class="opts" id="opts"></div>
+      <div class="fb" id="fb"></div>
+      <div class="row">
+        <button class="btn" id="bHint">Dica (H)</button>
+        <button class="btn" id="bSkip">Pular frase</button>
+        <span>Teclas <kbd>1</kbd>–<kbd>9</kbd> <kbd>0</kbd> para responder ou marcar · <kbd>Enter</kbd> ou <kbd>Espaço</kbd> para continuar</span>
+      </div>
+    </div>
+  </section>
+  <aside class="legend" id="legend"><h2>Legenda de cores</h2><div id="legBody"></div></aside>
+</main>
+
+<div class="toast" id="toast"></div>
+<div class="modal" id="modal"><div class="mbox" id="mbox"></div></div>
+
+<script>
+{
+/*DADOS-INICIO (este bloco não usa o navegador: o script validar.js o executa no Node) */
+/* ================= DECISÕES, REGRAS, CORES ================= */
+const DEC = {
+  ob:{n:'Obrigatória',h:145,s:62,l:37,tip:'Alguém exige a preposição “a” E a palavra seguinte aceita o artigo “a”: a + a = à.'},
+  pr:{n:'Proibida',h:356,s:72,l:47,tip:'Falta uma das partes: ninguém pede a preposição, ou a palavra seguinte não aceita o artigo “a”.'},
+  fa:{n:'Facultativa',h:40,s:92,l:46,tip:'O artigo é opcional (possessivo, nome de pessoa, depois de “até”): com ou sem crase está certo.'},
+  ha:{n:'Há (verbo haver)',h:212,s:80,l:46,tip:'Tempo que já passou: troque por “faz”. Tempo futuro ou distância usam “a”.'}
+};
+const DORDER = ['ob','pr','fa','ha'];
+/* n = nome da regra; s = rótulo curto (aparece embaixo da lacuna); x = explicação + teste prático (aparece no erro);
+   h = dica (não entrega a resposta); w/no = palavras-chave para corrigir a escrita por extenso (níveis 11–12);
+   none = por que nenhuma palavra exige o "a" (passo 1, quando não há termo regente) */
+const RULES = {
+  'ob.art':{n:'preposição + artigo feminino',s:'prep. + artigo',
+    x:'O termo exige a preposição “a” e a palavra feminina aceita o artigo “a”: a + a = à. Teste: troque por uma palavra masculina; se virar “ao”, tem crase (fui à farmácia → fui ao mercado).',
+    h:'Teste: troque a palavra depois da lacuna por uma masculina. Fica “ao”, “o” ou só “a”?',
+    w:['prep|regra|exig|pede','art|artig|geral|feminin'],no:['mascul','sem','outra','depois','possess','lugar','casa','terra','hora','locu','nao','repet']},
+  'ob.loc':{n:'locução feminina (à noite, às pressas, à medida que)',s:'locução',
+    x:'Locução adverbial, prepositiva ou conjuntiva formada por palavra feminina leva crase: à noite, às pressas, à beira de, à custa de, à medida que.',
+    h:'É uma expressão fixa com palavra feminina, que funciona como um bloco (à noite, às vezes, à custa de)?',
+    w:['locu|expressao'],no:['mascul','repet','sem','nao'],none:'a crase vem da própria locução feminina.'},
+  'ob.hora':{n:'hora exata',s:'hora',
+    x:'Hora exata leva crase: às 8h, à uma hora, à meia-noite. Teste: compare com “ao meio-dia”.',
+    h:'Indica uma hora exata? Compare com “ao meio-dia”.',
+    w:['hora|horario'],no:['passad','futur','sem','nao'],none:'é locução de tempo que indica hora exata.'},
+  'ob.moda':{n:'“à moda de”, mesmo oculta',s:'à moda de',
+    x:'“À moda de” leva crase mesmo com “moda” oculta, e até antes de nome masculino: bife à milanesa (= à moda milanesa), gol à Pelé (= à moda de Pelé).',
+    h:'Dá para pôr “à moda” no meio (bife à moda milanesa)?',
+    w:['moda|maneira|estilo'],no:[],none:'é a expressão “à moda de”, com “moda” oculta ou não.'},
+  'ob.dem':{n:'a + aquele, aquela, aquilo',s:'a + aquele',
+    x:'O termo exige “a”, que se junta ao “a” de aquele/aquela/aquilo: a + aquele = àquele. Teste: troque por “este”; se ficar “a este”, use àquele (refiro-me a este → refiro-me àquele).',
+    h:'Troque por “este/esta/isto”: aparece “a este”? Então o “a” se junta ao “aquele”.',
+    w:['aquel|aquil|demonstr'],no:['sem','nao']},
+  'ob.rel':{n:'a + a qual, as quais',s:'a + a qual',
+    x:'O verbo que vem DEPOIS exige “a” (referir-se a, assistir a, obedecer a): a + a qual = à qual. Teste: no masculino vira “ao qual” (o filme ao qual assisti).',
+    h:'Olhe o verbo depois da lacuna: ele pede “a”? Teste no masculino: “ao qual” ou “o qual”?',
+    w:['qual|quais|relativ'],no:['sem','nao']},
+  'ob.lugar':{n:'lugar que aceita artigo (volto da)',s:'lugar c/ artigo',
+    x:'Teste do “volto da”: se você volta DA, vai À (vou à Bahia → volto da Bahia). Lugar especificado também aceita artigo (à Roma antiga).',
+    h:'Teste: troque “ir a” por “voltar de”. Fica “volto da” ou “volto de”?',
+    w:['lugar|cidade|pais|estado|volto|regiao|vou'],no:['sem','nao','de']},
+  'ob.casa':{n:'casa ou terra especificada',s:'casa/terra espec.',
+    x:'“Casa” e “terra” com especificação aceitam artigo: fui à casa dos meus pais (volto da casa dos meus pais). A Terra, planeta, também: voltaram à Terra.',
+    h:'“Casa” ou “terra” vem especificada (de quem? qual?)? Teste: “volto da casa de…” ou “volto de casa”?',
+    w:['casa|terra|planeta'],no:['sem','nao']},
+
+  'pr.masc':{n:'antes de palavra masculina',s:'masculino',
+    x:'Palavra masculina não aceita o artigo “a”, então não há crase: a pé, a prazo, a lápis, a um amigo.',
+    h:'A palavra depois da lacuna é masculina ou feminina?',
+    w:['mascul'],no:[],none:'é expressão com palavra masculina (a pé, a prazo): o “a” é só preposição.'},
+  'pr.verbo':{n:'antes de verbo',s:'verbo',
+    x:'Verbo não aceita artigo: o “a” é só preposição (começou a chover, a partir de hoje).',
+    h:'A palavra depois da lacuna é um verbo (terminado em -ar, -er, -ir)?',
+    w:['verb|infinit'],no:[],none:'o “a” vem antes de verbo e só liga as palavras.'},
+  'pr.pron':{n:'antes de pronome (pessoal, de tratamento, indefinido, demonstrativo) ou de “uma”',s:'pronome / uma',
+    x:'Pronome pessoal, de tratamento, indefinido ou demonstrativo (e o artigo “uma”) não aceita o artigo “a”: a ela, a você, a Vossa Excelência, a ninguém, a cada, a esta, a uma colega.',
+    h:'Depois da lacuna vem um pronome (ela, você, ninguém, cada, esta) ou “uma”? Dá para pôr “a” antes dele?',
+    w:['pron|tratament|pessoal|indefinid|uma'],no:['aquel','aquil','possess','relativ','qual']},
+  'pr.plural':{n:'“a” no singular antes de plural',s:'a + plural',
+    x:'Se o “a” está no singular e a palavra seguinte no plural, ele é só preposição, sem artigo: a pessoas, a novelas. Com artigo, seria “às” (às pessoas).',
+    h:'A palavra depois da lacuna está no plural, mas a lacuna só aceita “a” no singular?',
+    w:['plural'],no:[]},
+  'pr.rep':{n:'entre palavras repetidas',s:'repetidas',
+    x:'Entre palavras repetidas o “a” é só preposição: cara a cara, gota a gota, frente a frente.',
+    h:'A palavra antes e a palavra depois da lacuna são iguais?',
+    w:['repet|iguais|dobrad|duplic'],no:[],none:'é expressão com palavras repetidas: o “a” é só preposição.'},
+  'pr.casa':{n:'casa ou terra sem especificação',s:'casa/terra',
+    x:'“Casa” (o próprio lar) e “terra” (oposto de “a bordo”) sem especificação não aceitam artigo: voltei a casa (volto de casa). “Chegar em casa” é coloquial; na norma-padrão, “chegar a casa”.',
+    h:'“Casa” aqui é o próprio lar, sem dizer de quem? Teste: “volto de casa” ou “volto da casa”?',
+    w:['casa|terra','sem|nao|lar|generic|propri'],no:[]},
+  'pr.lugar':{n:'lugar sem artigo (volto de)',s:'lugar s/ artigo',
+    x:'Teste do “volto de”: se você volta DE, vai A (vou a Roma → volto de Roma).',
+    h:'Teste: troque “ir a” por “voltar de”. Fica “volto da” ou “volto de”?',
+    w:['lugar|cidade|pais|volto|vou','sem|nao|de'],no:[]},
+  'pr.prep':{n:'depois de outra preposição',s:'outra prep.',
+    x:'Depois de outra preposição (para, perante, após, desde, contra, entre, sob, segundo) o “a” é só artigo: não há crase.',
+    h:'Antes da lacuna já existe outra preposição (para, perante, após, desde…)?',
+    w:['prep','outra|depois|apos|ja|perante|desde|para|segundo|contra'],no:[],none:'a outra preposição já liga as palavras: o “a” é só artigo.'},
+  'pr.tempo':{n:'tempo futuro ou distância',s:'futuro / distância',
+    x:'Para tempo futuro ou distância, use “a” (daqui a dois dias; fica a duas quadras). Para tempo que já passou, use “há” (= faz).',
+    h:'Fala de tempo que ainda vai passar, ou de distância? Troque por “faz”: continua com sentido?',
+    w:['futur|distanc|daqui'],no:[],none:'o “a” indica tempo futuro ou distância.'},
+  'pr.semprep':{n:'sem preposição: só artigo ou pronome',s:'sem preposição',
+    x:'Nenhum termo exige a preposição “a”: é só o artigo (ou o pronome). Teste: no masculino vira “o”, e não “ao” (visitei a avó → visitei o avô).',
+    h:'Alguma palavra antes pede “a”? Teste no masculino: fica “o” ou “ao”?',
+    w:['sem|nao|nenhum|so|apenas|transitiv|direto','prep|artig|art|exig|pede|regenc|transitiv|direto'],no:['lugar','cidade','casa','terra','mascul','plural','futur','outra','depois'],
+    none:'nenhuma palavra pede a preposição: o “a” é só artigo ou faz parte do pronome.'},
+
+  'fa.pos':{n:'antes de pronome possessivo feminino',s:'possessivo',
+    x:'Antes de possessivo feminino no singular, o artigo é opcional, então a crase também: à minha mãe ou a minha mãe.',
+    h:'Depois da lacuna vem minha, sua, nossa, tua? Com essas palavras o artigo é opcional.',
+    w:['possess|minha|sua|nossa|tua'],no:[]},
+  'fa.nome':{n:'antes de nome feminino de pessoa',s:'nome de pessoa',
+    x:'Antes de nome feminino de pessoa o artigo é opcional (a Maria chegou / Maria chegou), então a crase também: à Maria ou a Maria. Teste: “ao João” ou “a João”.',
+    h:'É nome próprio de pessoa? Antes de nome de pessoa o artigo é opcional.',
+    w:['nome|propri|pessoa'],no:['pronome']},
+  'fa.ate':{n:'depois de “até”',s:'depois de até',
+    x:'Depois de “até”, a preposição “a” é opcional: até a praia ou até à praia (como até o mar ou até ao mar).',
+    h:'Antes da lacuna vem “até”?',
+    w:['ate'],no:[]},
+
+  'ha.tempo':{n:'tempo passado (= faz)',s:'tempo passado',
+    x:'“Há” é o verbo haver e indica tempo que já passou: troque por “faz” (moro aqui há dez anos = faz dez anos). Para futuro ou distância, use “a”.',
+    h:'Troque por “faz”: a frase continua com sentido? O tempo já passou?',
+    w:['passad|decorr|faz|haver|transcorr'],no:[],none:'é o verbo haver indicando tempo passado (= faz).'}
+};
+const dec = r => r.split('.')[0];
+const RBY = {}; for(const r in RULES){ (RBY[dec(r)]=RBY[dec(r)]||[]).push(r); }
+/* palavras que o jogo reconhece como formas de lacuna */
+const FORMS = new Set(['a','à','as','às','há','aquele','àquele','aquela','àquela','aqueles','àqueles','aquelas','àquelas','aquilo','àquilo','a qual','à qual','as quais','às quais']);
+/* níveis 1–6: regras que entram em cada nível e formas permitidas */
+const POOL = [null,['ob.art','pr.masc']];
+POOL[2]=POOL[1].concat(['pr.verbo','pr.pron','pr.semprep']);
+POOL[3]=POOL[2].concat(['ob.loc','ob.hora','pr.plural']);
+POOL[4]=POOL[3].concat(['ob.lugar','pr.lugar','ob.casa','pr.casa','ob.moda','pr.rep','pr.prep']);
+POOL[5]=Object.keys(RULES);
+const TRICKY_R = new Set(['pr.semprep','ob.rel','ob.dem','pr.tempo','ha.tempo','ob.moda','ob.casa','pr.casa','pr.prep','pr.plural','fa.pos','fa.nome','fa.ate','ob.lugar','pr.lugar']);
+
+/* ================= BANCO DE FRASES (anotado) =================
+   Uma frase por linha.
+   {forma|regra|nota opcional}  = lacuna. Formas aceitas separadas por "/" (facultativa: a/à).
+   [palavra]   = termo que exige a preposição "a" para a PRÓXIMA lacuna;
+   [palavra<]  = exige "a" para a lacuna ANTERIOR (ex.: "à qual me referi");
+   [palavra#2] = exige "a" para a lacuna nº 2 da frase.
+   Lacuna sem termo marcado = nenhuma palavra exige o "a" (locução, hora, tempo, só artigo…). */
+const BANK = `
+Ontem eu [fui] {à|ob.art} farmácia comprar remédio.
+[Entreguei] o documento {à|ob.art} secretária.
+Nós [assistimos] {à|ob.art|assistir no sentido de “ver” pede “a”: assistimos ao jogo} peça da escola.
+O aluno [respondeu] {à|ob.art} pergunta da professora.
+[Agradeci] {à|ob.art} enfermeira pelo cuidado.
+Ela fez uma [visita] {à|ob.art|o nome “visita” pede “a”: uma visita ao avô} avó no domingo.
+Todos devem [obediência] {à|ob.art} lei.
+O cigarro é [prejudicial] {à|ob.art} saúde.
+Ele tem [aversão] {à|ob.art} violência.
+[Chegamos] {à|ob.art} escola antes do sinal.
+O [acesso] {à|ob.art} internet melhorou na cidade.
+Ela se [candidatou] {à|ob.art} vaga de estágio.
+[Devido] {à|ob.art|“devido a”: devido ao frio} chuva, o jogo foi adiado.
+[Graças] {à|ob.art} ajuda dos vizinhos, a casa ficou pronta.
+Fique [atento] {à|ob.art} explicação.
+Somos [contrários] {à|ob.art} proposta do síndico.
+Ele sempre [aspirou] {à|ob.art|“aspirar” no sentido de “desejar” pede “a”: aspirava ao cargo} carreira de médico.
+O ônibus [chegou] {à|ob.art} rodoviária com atraso.
+O diretor se [referiu] {à|ob.art} reunião de ontem.
+[Enviei] uma carta {à|ob.art} diretora.
+[Pedi] ajuda {à|ob.art} vizinha.
+O jornal fez uma [crítica] {à|ob.art} decisão do juiz.
+Ele se [dirigiu] {à|ob.art} saída.
+[Mostrei] o desenho {à|ob.art} turma.
+O [amor] {à|ob.art} pátria aparece no hino.
+A menina [deu] comida {à|ob.art} gata.
+[Fomos] {à|ob.art} feira comprar frutas.
+Ele é muito [fiel] {à|ob.art} família.
+[Levei] o cachorro {à|ob.art} clínica veterinária.
+[Fiz] uma pergunta {à|ob.art} médica.
+O prefeito [assistiu] {à|ob.art} inauguração da ponte.
+[Prefiro#2] {a|pr.semprep|aqui o “a” é só artigo: prefiro o mar} praia {à|ob.art|preferir uma coisa A outra: prefiro o mar ao campo} montanha.
+Ele [resistiu] {à|ob.art} vontade de comer o bolo.
+[Voltamos] {à|ob.art} sala depois do intervalo.
+Ela [pertence] {à|ob.art} equipe de vôlei.
+Os alunos [compareceram] {à|ob.art} palestra.
+A [homenagem] {à|ob.art} professora emocionou todos.
+[Dei] um presente {à|ob.art} madrinha.
+Ele [cedeu] o lugar {à|ob.art} gestante.
+[Contei] a novidade {à|ob.art} turma.
+A [visita] {à|ob.art} fábrica foi cancelada.
+O professor fez uma [pergunta] difícil {à|ob.art} classe.
+[Cheguei] {à|ob.art} escola {às|ob.hora} 7h.
+Ela [disse] {a|pr.pron} ele que [iria] {à|ob.art} festa.
+[Fomos] {à|ob.art} praia {à|ob.loc} tarde.
+{há|ha.tempo} dias não [vou] {à|ob.art} academia.
+[Obedeça] {às|ob.art} regras do jogo.
+Ele se [referiu] {às|ob.art} notícias da manhã.
+[Entreguei] os convites {às|ob.art} convidadas da festa.
+O técnico [deu] os parabéns {às|ob.art} jogadoras do time.
+[Fomos] {às|ob.art} compras no sábado.
+Ela não [resiste] {às|ob.art} promoções da loja.
+[Assistimos] {às|ob.art} aulas do professor Carlos.
+O livro é [dedicado] {às|ob.art} mães da comunidade.
+O prêmio foi [dado] {às|ob.art} vencedoras do concurso.
+O delegado [fez] perguntas {às|ob.art} testemunhas do crime.
+O diretor [agradeceu] {às|ob.art} famílias pela presença.
+[Respondi] {às|ob.art} mensagens da manhã.
+Fomos {a|pr.masc} pé até a escola.
+Meu avô andava {a|pr.masc} cavalo na fazenda.
+Comprei a geladeira {a|pr.masc} prazo.
+O desenho foi feito {a|pr.masc} lápis.
+O quadro foi pintado {a|pr.masc} óleo.
+O fogão funciona {a|pr.masc} gás.
+[Entreguei] a encomenda {a|pr.masc|“um” é masculino: a um vizinho} um vizinho.
+Ela se [referiu] {a|pr.masc|nome masculino: “a Pedro” ou “ao Pedro”, nunca “à”} Pedro.
+O professor [dedicou] o livro {a|pr.masc} seus alunos.
+Ontem [assisti] {a|pr.masc} um filme ótimo.
+Os passageiros já estão {a|pr.masc} bordo.
+Ela viajou {a|pr.masc} trabalho.
+Ele chegou {a|pr.masc} tempo para o jogo.
+O arroz é vendido {a|pr.masc} granel.
+Conversamos {a|pr.masc} respeito do passeio.
+[Pedi] um favor {a|pr.masc} meu irmão.
+O criminoso agiu {a|pr.masc} sangue-frio.
+Ela [enviou] flores {a|pr.masc} um paciente.
+O motor funciona {a|pr.masc} vapor.
+Todos votaram {a|pr.masc} favor da proposta.
+O carro foi pintado {a|pr.masc} jato de tinta.
+De repente, [começou] {a|pr.verbo} chover.
+Ela [aprendeu] {a|pr.verbo} nadar aos seis anos.
+Estou [disposto] {a|pr.verbo} ajudar.
+{a|pr.verbo|“a partir de” vem do verbo partir} partir de hoje, a loja abre aos domingos.
+Ele [voltou] {a|pr.verbo} estudar {à|ob.loc} noite.
+A criança se [pôs] {a|pr.verbo} chorar.
+Ainda temos muitas tarefas {a|pr.verbo} cumprir.
+O professor nos [ensinou] {a|pr.verbo} ler mapas.
+Ela [passou] {a|pr.verbo} trabalhar de casa.
+Ele se [negou] {a|pr.verbo} responder.
+A empresa se [comprometeu] {a|pr.verbo} pagar a dívida.
+Ela nos [convidou] {a|pr.verbo} entrar.
+O telefone [tornou] {a|pr.verbo} tocar.
+{a|pr.verbo} julgar pela cara dele, a prova foi difícil.
+A turma [começou] {a|pr.verbo} entender a matéria.
+O bebê já [começa] {a|pr.verbo} andar.
+Eles [obrigaram] os alunos {a|pr.verbo} sair da sala.
+Ela [continua] {a|pr.verbo} sonhar com a viagem.
+O menino se [recusou] {a|pr.verbo} comer a sopa.
+[Voltei] {a|pr.verbo} correr depois da cirurgia.
+Eu [disse] {a|pr.pron} ela que voltaria cedo.
+Já [expliquei] isso {a|pr.pron} você.
+Não [conte] o segredo {a|pr.pron} ninguém.
+[Pedimos] {a|pr.pron|pronome de tratamento não aceita artigo} Vossa Excelência que reconsidere.
+O professor [deu] uma folha {a|pr.pron} cada aluna.
+[Refiro-me] {a|pr.pron|“esta” é demonstrativo: não aceita artigo} esta situação.
+[Fiz] uma pergunta {a|pr.pron} essa moça.
+Ele não [obedece] {a|pr.pron} nenhuma regra.
+[Mande] lembranças {a|pr.pron} elas.
+O prêmio será [entregue] {a|pr.pron} qualquer pessoa que acertar.
+[Emprestei] o livro {a|pr.pron|“uma” é artigo indefinido: não aceita o artigo “a”} uma colega.
+Ele se [referiu] {a|pr.pron} uma amiga de infância.
+[Contei] tudo {a|pr.pron} alguém de confiança.
+[Cabe] {a|pr.pron} mim decidir.
+O relatório foi [enviado] {a|pr.pron} Vossa Senhoria.
+Isso não [interessa] {a|pr.pron} ninguém.
+[Diga] {a|pr.pron} ela que estou chegando.
+Não [dou] ouvidos {a|pr.plural} fofocas.
+Ele se [referiu] {a|pr.plural} pessoas que nem conhecia.
+Não [assisto] {a|pr.plural} novelas.
+O curso é [destinado] {a|pr.plural} mulheres empreendedoras.
+Ela [fez] visitas {a|pr.plural} escolas da região.
+O banco [concede] empréstimos {a|pr.plural} empresas pequenas.
+Ele [assistiu] {a|pr.plural} palestras sobre saúde.
+Prefiro não [responder] {a|pr.plural} perguntas pessoais.
+O prêmio será [dado] {a|pr.plural} crianças de todo o país.
+O remédio só é [vendido] {a|pr.plural} pessoas com receita.
+Os dois ficaram cara {a|pr.rep} cara.
+A água pingava gota {a|pr.rep} gota.
+Os dois times ficaram frente {a|pr.rep} frente.
+Percorremos a cidade de ponta {a|pr.rep} ponta.
+Conferi as provas uma {a|pr.rep} uma.
+Os candidatos debateram face {a|pr.rep} face.
+Revisei o contrato linha {a|pr.rep} linha.
+A campanha fez visitas porta {a|pr.rep} porta.
+O restaurante ficou famoso pela propaganda boca {a|pr.rep} boca.
+Lemos o livro página {a|pr.rep} página.
+As vendas cresciam semana {a|pr.rep} semana.
+Saímos {às|ob.loc} pressas.
+{à|ob.loc} medida que estudava, entendia mais.
+Ele vive {à|ob.loc} custa dos pais.
+A casa fica {à|ob.loc} beira do rio.
+O menino ficou {à|ob.loc} toa na praça.
+{às|ob.loc} vezes, prefiro ficar sozinho.
+Fique {à|ob.loc} vontade.
+Vire {à|ob.loc} direita na próxima rua.
+Pagamos o carro {à|ob.loc} vista.
+Ela estava {à|ob.loc} procura do gato.
+Ficamos {à|ob.loc} espera do resultado.
+Todos foram, {à|ob.loc} exceção de Pedro.
+É um bolo {à|ob.loc} base de chocolate.
+O material está {à|ob.loc} disposição dos alunos.
+Eles se encontravam {às|ob.loc} escondidas.
+Siga as instruções {à|ob.loc} risca.
+O barco ficou {à|ob.loc} deriva.
+{à|ob.loc} primeira vista, o problema parecia fácil.
+Ela vestiu a blusa {às|ob.loc} avessas.
+O preço sobe {à|ob.loc} proporção que a procura aumenta.
+Andamos {às|ob.loc} cegas no escuro.
+A loja fica {à|ob.loc} esquerda do banco.
+Ele ficou {à|ob.loc} frente da fila.
+{à|ob.loc} noite, [assistimos] {a|pr.masc} um filme.
+Ele fala de tudo {às|ob.loc} claras.
+A aula começa {às|ob.hora} 8h.
+O voo sai {às|ob.hora} 22h30.
+Almoçamos {à|ob.hora|aqui “uma” é a hora: à uma hora (compare: ao meio-dia)} uma hora.
+A festa terminou {à|ob.hora} meia-noite.
+A loja abre das 9h {às|ob.hora|“das… às”: das 9h às 18h} 18h.
+O jogo começa {às|ob.hora} quatro da tarde.
+Acordei {às|ob.hora} seis em ponto.
+O remédio deve ser tomado {às|ob.hora} 7h e {às|ob.hora} 19h.
+O trem partiu {às|ob.hora} três horas da madrugada.
+Nós nos encontramos {às|ob.hora} 14h na praça.
+A palestra será {às|ob.hora} 19h, daqui {a|pr.tempo} duas semanas.
+O mercado fecha {às|ob.hora} dez da noite.
+Todos são iguais perante {a|pr.prep} lei.
+Faltam cinco minutos para {as|pr.prep|“para” já é preposição: o “as” é só artigo} 8h.
+Após {a|pr.prep} reunião, fomos almoçar.
+Ela pinta quadros desde {a|pr.prep} infância.
+Vou para {a|pr.prep} escola de ônibus.
+Ele encostou a bicicleta contra {a|pr.prep} parede.
+Segundo {a|pr.prep} previsão, vai chover.
+A reunião ficou para {a|pr.prep} semana que vem.
+Ela ficou entre {as|pr.prep} finalistas.
+O gato dormia sob {a|pr.prep} mesa.
+O ônibus vai para {as|pr.prep} praias do norte.
+A prova será daqui {a|pr.tempo} dois dias.
+Daqui {a|pr.tempo} pouco o filme começa.
+A escola fica {a|pr.tempo} duas quadras daqui.
+Estamos {a|pr.tempo} duas semanas do Natal.
+O hotel fica {a|pr.tempo} cinco minutos da praia.
+Daqui {a|pr.tempo} uma semana entro de férias.
+O incêndio começou {a|pr.tempo} poucos metros da escola.
+{há|ha.tempo} dois anos mudei para cá; daqui {a|pr.tempo} dois anos me formo.
+O mercado fica {a|pr.tempo} 3 km do centro.
+A final será daqui {a|pr.tempo} três semanas.
+Ele mora {a|pr.tempo|distância medida em tempo; compare: chegou à uma hora (hora exata)} uma hora de viagem daqui.
+Moro nesta cidade {há|ha.tempo} dez anos.
+{há|ha.tempo} pouco tempo ele ligou.
+Isso aconteceu {há|ha.tempo} muito tempo.
+Não vejo meu primo {há|ha.tempo} semanas.
+Ela saiu {há|ha.tempo} cinco minutos.
+Trabalho nesta empresa {há|ha.tempo} três anos.
+{há|ha.tempo} anos não viajo de férias.
+Os dinossauros viveram {há|ha.tempo} milhões de anos.
+Estudo piano {há|ha.tempo} seis meses.
+O ônibus passou {há|ha.tempo} pouco.
+{há|ha.tempo} uma semana [fui] {à|ob.lugar} Bahia.
+Pedi um bife {à|ob.moda|à (moda) milanesa} milanesa.
+O restaurante serve filé {à|ob.moda} parmegiana.
+Comemos bacalhau {à|ob.moda} portuguesa.
+O jogador fez um gol {à|ob.moda|à moda de Pelé: vale até antes de nome masculino} Pelé.
+Ela saiu {à|ob.moda|sair à francesa = sair sem se despedir} francesa.
+A sala tem móveis {à|ob.moda} Luís XV.
+Fizemos arroz {à|ob.moda} grega.
+Provei um camarão {à|ob.moda} baiana.
+Ele escreve {à|ob.moda} Machado de Assis.
+O cozinheiro preparou frango {à|ob.moda} caçadora.
+Pedimos uma pizza {à|ob.moda} moda da casa.
+[Refiro-me] {àquele|ob.dem} livro que você me emprestou.
+Nunca mais [fui] {àquela|ob.dem} festa.
+Não [dê] atenção {àquilo|ob.dem}.
+[Entreguei] a caixa {àquele|ob.dem} senhor de chapéu.
+Você já [assistiu] {àquele|ob.dem} filme?
+[Obedeça] {àquela|ob.dem} placa de trânsito.
+[Volte] {àquele|ob.dem} ponto da explicação.
+Ela se [referiu] {àquilo|ob.dem} que eu disse.
+[Prefiro] este caderno {àquele|ob.dem}.
+Fiz uma [visita] {àquela|ob.dem} cidade histórica.
+[Chegamos] {àquelas|ob.dem} praias depois de horas.
+Não [dei] importância {àquelas|ob.dem} críticas.
+Comprei {aquela|pr.semprep|comprar não pede “a”: comprei aquele livro} casa da esquina.
+Você já viu {aquele|pr.semprep|“ver” não pede “a” (mas “assistir” pede)} filme?
+A empresa {a qual|pr.semprep|visitar não pede preposição: o museu o qual visitei} visitei é enorme.
+Visitei {a|pr.semprep} avó no domingo.
+Conheço {a|pr.semprep} cidade inteira.
+Encontrei {a|pr.semprep} professora no mercado.
+Ajudei {a|pr.semprep|ajudar alguém: ajudei o vizinho} vizinha com as compras.
+Ele namora {a|pr.semprep|namorar alguém: sem “com” e sem “a” na norma-padrão} filha do padeiro.
+Esqueci {a|pr.semprep} senha do celular.
+Respeite {a|pr.semprep} fila.
+Ela já pagou {a|pr.semprep} conta.
+As regras {as quais|pr.semprep} criamos são simples.
+Não entendi {aquela|pr.semprep} explicação.
+Admiro {aquela|pr.semprep} atitude.
+O técnico elogiou {a|pr.semprep} equipe.
+Ela abraçou {a|pr.semprep} mãe na chegada.
+A empresa {à qual|ob.rel} me [referi<] fechou.
+As leis {às quais|ob.rel} [obedecemos<] são antigas.
+A peça {à qual|ob.rel} [assisti<] era ótima.
+As vagas {às quais|ob.rel} [concorri<] já foram preenchidas.
+A reunião {à qual|ob.rel} [compareci<] foi longa.
+A conclusão {à qual|ob.rel} [chegamos<] surpreendeu todos.
+Esta é a causa {à qual|ob.rel} ele [dedicou<] a vida.
+A cidade {à qual|ob.rel} [fomos<] tem praias lindas.
+A vaga {à qual|ob.rel} ela [aspira<] é muito disputada.
+As pessoas {às quais|ob.rel} [agradeci<] estavam emocionadas.
+A regra {à qual|ob.rel} me [refiro<] é clara.
+Nas férias, [vou] {à|ob.lugar|vou à Bahia → volto da Bahia} Bahia.
+Eles [viajaram] {à|ob.lugar} Itália no verão.
+Ela [voltou] {à|ob.lugar} França depois de anos.
+[Chegamos] {à|ob.lugar} Argentina de carro.
+Nunca [fui] {à|ob.lugar} Europa.
+O cantor [retornou] {à|ob.lugar} Paraíba, sua terra.
+[Iremos] {à|ob.lugar} Austrália no ano que vem.
+Num passeio virtual, [fomos] {à|ob.lugar|lugar especificado aceita artigo: volto da Roma antiga} Roma antiga.
+O presidente [viajou] {à|ob.lugar} China.
+[Fomos] {à|ob.lugar} Espanha de trem.
+[Voltei] {à|ob.lugar|lugar especificado: volto da Lisboa da minha infância} Lisboa da minha infância.
+Nas férias, [vou] {a|pr.lugar|vou a Roma → volto de Roma} Roma.
+Ela [viajou] {a|pr.lugar} Lisboa {a|pr.masc} trabalho.
+[Chegamos] {a|pr.lugar} Curitiba de madrugada.
+O ministro [foi] {a|pr.lugar} Brasília ontem.
+Eles nunca [foram] {a|pr.lugar} Cuba.
+[Voltei] {a|pr.lugar} Fortaleza para rever a família.
+O avião [chegou] {a|pr.lugar} Londres no horário.
+[Fomos] {a|pr.lugar} Florianópolis de ônibus.
+Ela [retornou] {a|pr.lugar} Paris para estudar.
+Ele [vai] {a|pr.lugar} Atenas em julho.
+[Voltei] {à|ob.casa|casa especificada: volto da casa dos meus pais} casa dos meus pais.
+[Fomos] {à|ob.casa} casa da vovó no Natal.
+[Levei] o bolo {à|ob.casa} casa da vizinha.
+Ela [chegou] {à|ob.casa} casa de Ana {às|ob.hora} 9h.
+Os astronautas [voltaram] {à|ob.casa|Terra (planeta) aceita artigo: volto da Terra} Terra.
+O exilado [voltou] {à|ob.casa} terra natal.
+Ele [retornou] {à|ob.casa} terra dos avós.
+[Fui] {à|ob.casa} casa de praia dos meus tios.
+A nave [regressou] {à|ob.casa} Terra em segurança.
+[Voltei] {a|pr.casa|casa = o próprio lar: volto de casa} casa mais cedo.
+Ela [chegou] {a|pr.casa|na norma-padrão, “chegar a casa”; “chegar em casa” é coloquial} casa cansada.
+[Vou] {a|pr.casa} casa almoçar e já volto.
+[Retornamos] {a|pr.casa} casa depois da viagem.
+Ele [correu] {a|pr.casa} casa para buscar o casaco.
+Os marinheiros [desceram] {a|pr.casa|terra = oposto de “a bordo”: volto de terra} terra.
+A tripulação [foi] {a|pr.casa} terra comprar mantimentos.
+O capitão [mandou] dois homens {a|pr.casa} terra.
+Depois do jogo, [voltamos] {a|pr.casa} casa {a|pr.masc} pé.
+[Entreguei] o presente {à/a|fa.pos} minha mãe.
+[Obedeço] {à/a|fa.pos} minha consciência.
+Ele se [referiu] {à/a|fa.pos} nossa conversa.
+[Pedi] desculpas {à/a|fa.pos} minha irmã.
+[Respondi] {à/a|fa.pos} sua mensagem ontem.
+[Dei] atenção {à/a|fa.pos} tua proposta.
+Fiz uma [visita] {à/a|fa.pos} sua tia.
+[Agradeço] {à/a|fa.pos} minha família pelo apoio.
+[Volte] {à/a|fa.pos} sua cadeira, por favor.
+[Contei] a história {à/a|fa.pos} minha filha.
+[Entreguei] o livro {à/a|fa.nome} Maria.
+[Mandei] flores {à/a|fa.nome} Juliana.
+[Contei] tudo {à/a|fa.nome} Beatriz.
+Ele se [referiu] {à/a|fa.nome} Paula na reunião.
+[Agradeci] {à/a|fa.nome} Renata pelo convite.
+[Pedi] ajuda {à/a|fa.nome} Fernanda.
+[Fiz] um pedido {à/a|fa.nome} Carla.
+[Dei] os parabéns {à/a|fa.nome} Luísa.
+O prêmio foi [entregue] {à/a|fa.nome} Camila.
+Fomos [até] {a/à|fa.ate} praia de bicicleta.
+Caminhei [até] {a/à|fa.ate} esquina.
+Ele correu [até] {a/à|fa.ate} porta.
+Leia [até] {a/à|fa.ate} página 20.
+A fila chegava [até] {a/à|fa.ate} rua de trás.
+O rio vai [até] {a/à|fa.ate} cidade vizinha.
+Ela nadou [até] {a/à|fa.ate} boia.
+Andamos [até] {a/à|fa.ate} estação.
+Subimos [até] {a/à|fa.ate} cobertura do prédio.
+Levei o cachorro [até] {a/à|fa.ate} praça.
+[Chegamos] {à|ob.art} praia e fomos [até] {a/à|fa.ate} pedra grande.
+`;
+
+/* ================= LEITURA DO BANCO + VALIDAÇÃO ================= */
+const PUNCT = /^[.,!?;:]+$/;
+const ERRORS = [];
+const SENT = [];
+const lc = s => s.toLowerCase();
+BANK.trim().split('\n').forEach((raw,idx)=>{
+  const line=raw.trim(); if(!line) return;
+  const toks=[], gaps=[], regs=[]; let bad=false;
+  const err=m=>{ERRORS.push(`linha ${idx+1}: ${m} → ${line}`);bad=true;};
+  for(const m of line.match(/\{[^}]*\}|\S+/g)){
+    if(m[0]==='{'){
+      const [f,r,nt='']=m.slice(1,-1).split('|');
+      const forms=(f||'').split('/').map(x=>lc(x.trim())).filter(Boolean);
+      if(!RULES[r]) err(`regra desconhecida "${r}"`);
+      if(!forms.length||forms.some(x=>!FORMS.has(x))) err(`forma inválida "${f}"`);
+      const d=r?dec(r):'';
+      if(d==='ob'&&forms.some(x=>!x.startsWith('à'))) err('obrigatória sem crase');
+      if(d==='pr'&&forms.some(x=>x.startsWith('à')||x==='há')) err('proibida com crase ou "há"');
+      if(d==='fa'&&forms.length<2) err('facultativa precisa de duas formas (a/à)');
+      if(d!=='fa'&&forms.length>1) err('só a facultativa aceita duas formas');
+      if(d==='ha'&&forms.join()!=='há') err('regra "ha" precisa da forma "há"');
+      if(r==='pr.plural'&&forms.join()!=='a') err('pr.plural precisa da forma "a"');
+      const g={i:gaps.length,ti:toks.length,forms,r,nt:nt.trim(),reg:[]};
+      gaps.push(g); toks.push({gap:g.i}); continue;
+    }
+    if(PUNCT.test(m)){ toks.push({p:m}); continue; }
+    const b=m.match(/^\[([^\]<#]+)(<|#\d+)?\](.*)$/);
+    if(b){ regs.push({ti:toks.length,dir:b[2]||''}); toks.push({w:b[1],tail:b[3]}); continue; }
+    if(/[\[\]{}|]/.test(m)) err(`marcação quebrada "${m}"`);
+    toks.push({w:m});
+  }
+  if(!gaps.length) err('frase sem lacuna');
+  for(const {ti,dir} of regs){
+    let g;
+    if(dir==='<') g=[...gaps].reverse().find(x=>x.ti<ti);
+    else if(dir.startsWith('#')) g=gaps[+dir.slice(1)-1];
+    else g=gaps.find(x=>x.ti>ti);
+    if(!g){ err('termo regente sem lacuna'); continue; }
+    g.reg.push(ti);
+  }
+  if(bad) return;
+  const tricky=gaps.some(g=>g.nt||TRICKY_R.has(g.r));
+  const text=toks.map((x,i)=>x.p?x.p:x.gap!==undefined?(i===0?cap(gaps[x.gap].forms[0]):gaps[x.gap].forms[0]):x.w+(x.tail||'')).join(' ').replace(/ ([.,!?;:])/g,'$1');
+  SENT.push({id:idx,toks,gaps,tricky,text,len:toks.filter(x=>!x.p).length});
+});
+function cap(w){return w.charAt(0).toUpperCase()+w.slice(1);}
+{ const seen=new Map(); for(const s of SENT){ const k=s.text.toLowerCase(); if(seen.has(k)) ERRORS.push('frase duplicada: '+s.text); seen.set(k,1);} }
+const COUNT={}; for(const s of SENT) for(const g of s.gaps) COUNT[g.r]=(COUNT[g.r]||0)+1;
+for(const r in RULES) if((COUNT[r]||0)<8) ERRORS.push(`regra ${r} tem só ${COUNT[r]||0} exemplos (mínimo 8)`);
+/*DADOS-FIM*/
+
+/* ================= CORES ================= */
+function hsl2rgb(h,s,l){s/=100;l/=100;const k=n=>(n+h/30)%12,a=s*Math.min(l,1-l),f=n=>l-a*Math.max(-1,Math.min(k(n)-3,Math.min(9-k(n),1)));return[f(0),f(8),f(4)];}
+function lum(rgb){const c=rgb.map(v=>v<=.03928?v/12.92:((v+.055)/1.055)**2.4);return .2126*c[0]+.7152*c[1]+.0722*c[2];}
+/* cor de uma decisão (ob) ou de uma regra (ob.art): a regra usa um tom da cor da decisão */
+function color(k, tone=true){
+  const d=DEC[dec(k)]; let l=d.l;
+  if(tone&&k.includes('.')){ const arr=RBY[dec(k)], i=arr.indexOf(k), n=arr.length; if(n>1) l=d.l-15+30*i/(n-1); }
+  const bg=`hsl(${d.h} ${d.s}% ${l}%)`, fg=lum(hsl2rgb(d.h,d.s,l))>.33?'#16161a':'#fff';
+  return {bg,fg};
+}
+const NEUTRAL={bg:'var(--line)',fg:'var(--ink)'};
+const formColor=o=>o==='há'?color('ha',false):o.startsWith('à')?color('ob',false):color('pr',false);
+const pathLabel=r=>DEC[dec(r)].n+(RBY[dec(r)].length>1?' › '+RULES[r].n:'');
+const keyLabel=k=>DEC[k]?DEC[k].n:RULES[k]?RULES[k].n:k;
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
+
+const LEVELS = [null,
+  {n:'O básico',d:'“a” ou “à”: regra geral × palavra masculina'},
+  {n:'Verbos e pronomes',d:'Inclui antes de verbo, antes de pronome e “a” que é só artigo'},
+  {n:'Plural, horas e locuções',d:'Entram “as” e “às”: horas, locuções e “a” antes de plural'},
+  {n:'Lugares e expressões',d:'Vou a / volto da, casa e terra, à moda de, palavras repetidas, outra preposição'},
+  {n:'Facultativos, àquele, à qual e há',d:'Possessivo, nome de pessoa, até, àquele, à qual, “há” × “a”'},
+  {n:'Pegadinhas',d:'Todas as regras, com prioridade para os casos que mais confundem'},
+  {n:'Árvore completa',d:'Decisão → regra, sempre escolhendo entre TODAS as opções'},
+  {n:'Árvore + pegadinhas',d:'Árvore completa com prioridade para os casos que mais confundem'},
+  {n:'Árvore sem cores',d:'Opções sem cor: as cores só aparecem depois da resposta'},
+  {n:'Mestre',d:'Sem cores, opções embaralhadas, sem dica e com pegadinhas'},
+  {n:'Escrita',d:'Regras na etapa 3+ de domínio são escritas por extenso; as demais, árvore sem cores'},
+  {n:'Escrita mestre',d:'Escrita a partir da etapa 2; as demais no modo Mestre; e a caça ao acento'}
+];
+const MAXL=LEVELS.length-1;
+
+/* ================= ESTADO ================= */
+const KEY='crase.v1', HKEY='crase.hist.v1';
+const fresh=()=>({level:1,order:'regente',skipM:true,score:0,streak:0,best:0,ans:0,ok:0,sents:0,win:[],per:{},reg:{a:0,o:0},errW:{},errT:{},recent:[],mast:{}});
+let S=fresh();
+try{const raw=localStorage.getItem(KEY);if(raw)S=Object.assign(fresh(),JSON.parse(raw));}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}};
+/* Histórico completo: e = [data, idFrase, nºLacuna, regra, respostaCerta, resposta, acerto, nível, modo, dica]; t = texto das frases */
+let H={e:[],t:{}};
+try{const raw=localStorage.getItem(HKEY);if(raw)H=Object.assign({e:[],t:{}},JSON.parse(raw));}catch(e){}
+let hWarned=false;
+const saveH=()=>{try{localStorage.setItem(HKEY,JSON.stringify(H));}catch(e){ if(!hWarned){hWarned=true;toast('Memória do navegador cheia: copie o histórico (Estatísticas) para não perder respostas.');} }};
+
+/* ===== Domínio por etapas: acertos seguidos rendem "folgas" (vezes em que a pergunta é pulada).
+   Cada etapa pede menos acertos e dá folgas maiores. Um erro volta tudo ao início. ===== */
+const STG=[{need:5,skip:5},{need:3,skip:10},{need:2,skip:20},{need:1,skip:40},{need:1,skip:80},{need:1,skip:160}];
+const STALE_DAYS=5;
+const mkey=(r,mode)=>mode==='forma'?'F:'+r:(mode==='arvore'||mode==='escrita')?'A:'+r:null;
+const mModeName={F:'escolher a forma (a, à, as, às, há…)',A:'árvore (decisão → regra) e escrita'};
+const mLabel=k=>{const r=k.slice(2);return `${DEC[dec(r)].n}: ${RULES[r].n}`;};
+const mGet=k=>S.mast[k]||(S.mast[k]={st:0,c:0,sk:0,t:0});
+function mSkipNow(k){ const m=S.mast[k]; if(!m||m.sk<=0) return false;
+  if(m.t&&(Date.now()-m.t)/864e5>STALE_DAYS){ m.sk=0; return false; }
+  m.sk--; return true; }
+const mIsVerify=k=>{const m=S.mast[k];return !!(m&&m.st>0&&m.sk<=0);};
+const mFree=k=>{const m=S.mast[k];return !!(m&&m.sk>0);};
+function bumpMast(k,right){ if(!k) return null; const m=mGet(k); m.t=Date.now();
+  if(!right){ const lost=m.st>0||m.c>0; m.st=0;m.c=0;m.sk=0; return lost?{reset:true}:null; }
+  m.c++; const g=STG[m.st];
+  if(m.c>=g.need){ m.sk=g.skip; m.c=0; const was=m.st; m.st=Math.min(m.st+1,STG.length-1); return {gain:g.skip,stage:was}; }
+  return null; }
+
+let cur=null, qi=0, queue=[], waiting=false, hintUsed=false, endTimer=null, phase='q';
+let keepFb=false, tstep=0, tpick=[], wmode=false, numOf={}, byNum={}, regPick=null, hunt=null, tries=0;
+const $=id=>document.getElementById(id);
+const G=()=>cur.gaps[queue[qi]];
+
+/* ===== Escopo de cada lacuna no nível: 'forma' (escolher a forma), 'tree' (árvore) ou 'skip' (já aparece preenchida) ===== */
+const BASE2=['a','à'], BASE4=['a','à','as','às'];
+function scope(g,lv){
+  if(lv>=7) return 'tree';
+  if(!POOL[Math.min(lv,5)].includes(g.r)) return 'skip';
+  const allowed=lv<=2?BASE2:lv<=4?BASE4:null;
+  if(allowed&&!g.forms.every(f=>allowed.includes(f))) return 'skip';
+  return 'forma';
+}
+/* opções de forma para uma lacuna */
+function fam(g,lv){
+  const f=g.forms[0];
+  if(g.r==='pr.plural') return ['a','à'];
+  if(/qua(l|is)$/.test(f)) return ['a qual','à qual','as quais','às quais'];
+  if(/^[aà]qu(el|il)/.test(f)){ const b=f.slice(1); return ['a'+b,'à'+b]; }
+  return lv<=2?BASE2.slice():lv<=4?BASE4.slice():['a','à','as','às','há'];
+}
+
+function pickSentence(){
+  const lv=S.level, recent=new Set(S.recent);
+  let pool=SENT.filter(s=>!recent.has(s.id)); if(pool.length<5) pool=SENT.slice();
+  const ws=pool.map(s=>{
+    let w=1, tot=0, un=0;
+    s.gaps.forEach(g=>{ const sc=scope(g,lv); if(sc==='skip') return; tot++;
+      w+=(S.errW[s.id+':'+g.i]||0)*1.5+(S.errT[g.r]||0)*.4;
+      if(!mFree(mkey(g.r,sc==='tree'?'arvore':'forma'))) un++; });
+    if(!tot) return lv===12?.3:0;
+    if(S.skipM) w*= !un ? .15 : 1+.3*un;
+    if([6,8,10,12].includes(lv)&&s.tricky) w*=4;
+    if(lv<=2&&s.len>9) w*=.6;
+    return w;
+  });
+  const sum=ws.reduce((a,b)=>a+b,0);
+  if(!sum) return pool[Math.floor(Math.random()*pool.length)];
+  let r=Math.random()*sum;
+  for(let i=0;i<pool.length;i++){r-=ws[i];if(r<=0&&ws[i]>0)return pool[i];}
+  return pool[ws.findLastIndex(w=>w>0)];
+}
+
+/* ================= RENDER ================= */
+const shownForm=g=>g.shown||g.forms[0];
+const dispForm=(g,f)=>g.ti===0?cap(f):f;
+function regOwner(ti){ return cur.gaps.find(g=>g.regShown&&g.reg.includes(ti)); }
+function renderSentence(){
+  const H_=phase==='hunt'||phase==='huntfb';
+  $('sent').innerHTML=cur.toks.map((x,i)=>{
+    if(x.p) return `<span class="p">${x.p}</span>`;
+    if(H_){
+      const it=hunt.byTi[i]; let cl='w', lab='', attr='', st='', txt;
+      if(x.gap!==undefined){ const g=cur.gaps[x.gap];
+        if(phase==='huntfb'){ const c=color(g.r); st=`background:${c.bg};color:${c.fg}`; txt=dispForm(g,shownForm(g)); lab=g.hwrong?`era “${g.hshown}”`:RULES[g.r].s; if(g.miss) cl+=' wrong'; }
+        else txt=dispForm(g,g.hshown);
+      } else txt=x.w+(x.tail||'');
+      if(it){ if(phase==='hunt'){ cl+=' mk'+(hunt.marks.has(i)?' sel':''); attr=` data-i="${i}" role="button" tabindex="0" aria-pressed="${hunt.marks.has(i)}"`; lab=it.n<=10?String(it.n%10):''; }
+        else if(it.fp) cl+=' badpick'; }
+      return `<span class="${cl}"${attr}><span class="t" style="${st}">${txt}</span><span class="lab">${lab}</span></span>`;
+    }
+    if(x.gap!==undefined){
+      const g=cur.gaps[x.gap]; let cl='w gap', st='', lab='', txt;
+      if(g.rev){ const c=color(g.r); st=`background:${c.bg};color:${c.fg}`; txt=dispForm(g,shownForm(g)); lab=(g.mast?'★ ':'')+RULES[g.r].s; if(g.skip) cl+=' skip'; }
+      else { txt='?'; cl+=' pend'; }
+      if(queue[qi]===x.gap&&(phase==='q'||phase==='reg')) cl+=' cur';
+      if(g.miss) cl+=' wrong';
+      return `<span class="${cl}"><span class="t" style="${st}">${txt}</span><span class="lab">${lab}</span></span>`;
+    }
+    let cl='w', lab='', attr='', st='';
+    const og=regOwner(i);
+    if(og){ cl+=' rg'; st=`--rgc:${color(og.r).bg}`; lab='exige “a”'; }
+    if(phase==='reg'){ cl+=' mk'; attr=` data-i="${i}" role="button" tabindex="0"`; if(numOf[i]) lab=String(numOf[i]%10); }
+    if(regPick===i) cl+=' badpick';
+    return `<span class="${cl}"${attr} style="${st}"><span class="t">${x.w}${x.tail||''}</span><span class="lab">${lab}</span></span>`;
+  }).join('');
+}
+const chip=(r,txt)=>{const c=color(r);return `<span class="chip" style="background:${c.bg};color:${c.fg}">${txt||pathLabel(r)}</span>`;};
+const regWords=g=>g.reg.map(i=>cur.toks[i].w).join(' / ');
+function regInfo(g){ return g.reg.length?`Quem exige o “a”: <b>${regWords(g)}</b>.`:`Nenhuma palavra exige o “a”${RULES[g.r].none?': '+RULES[g.r].none:'.'}`; }
+function explain(g){ return `${RULES[g.r].x}${g.nt?`<br><b>Nesta frase:</b> ${g.nt}.`:''}<br><small>${regInfo(g)}</small>`; }
+const modeTags=g=>`${g.review?'<span class="mode rev">★ revisão</span>':''}`;
+
+/* ===== Passo 1 (ordem recomendada): tocar no termo que exige a preposição "a" ===== */
+function askReg(){
+  const g=G(); phase='reg'; waiting=false; hintUsed=false; regPick=null;
+  const ws=cur.toks.map((x,i)=>x.w?i:-1).filter(i=>i>=0).sort((a,b)=>Math.abs(a-g.ti)-Math.abs(b-g.ti)||a-b).slice(0,9).sort((a,b)=>a-b);
+  numOf={}; byNum={}; ws.forEach((ti,k)=>{numOf[ti]=k+1; byNum[k+1]=ti;});
+  renderSentence();
+  $('q').innerHTML=`<span><b>Passo 1:</b> toque na palavra que <b>exige a preposição “a”</b> nesta lacuna</span><span class="mode">verbo, nome ou “até”</span>${modeTags(g)}`;
+  $('opts').className='opts';
+  $('opts').innerHTML=`<button class="o" id="bNone" style="--sw:var(--line);--swt:var(--ink)"><span class="k">0</span>Nenhuma palavra exige</button>`;
+  $('bNone').onclick=()=>answerReg(-1);
+  $('fb').innerHTML=`<div class="box hint"><span class="ex">Crase = preposição “a” + artigo “a”. Primeiro ache quem pede a preposição (quem vai, vai <b>a</b>; quem se refere, refere-se <b>a</b>). Se for locução, hora, tempo, ou se ninguém pedir o “a”, escolha <b>Nenhuma</b> (<kbd>0</kbd>). As teclas <kbd>1</kbd>–<kbd>9</kbd> tocam nas palavras numeradas.</span></div>`;
+  $('bHint').disabled=false;
+}
+function answerReg(ti){
+  if(phase!=='reg') return;
+  const g=G(), lv=S.level, right=g.reg.length?g.reg.includes(ti):ti===-1;
+  const corr=g.reg.length?regWords(g):'nenhuma', ans=ti<0?'nenhuma':cur.toks[ti].w;
+  S.reg.a++; if(right) S.reg.o++;
+  H.e.push([Date.now(),cur.id,g.i,g.r,corr,ans,right?1:0,lv,'regente',hintUsed?1:0]); H.t[cur.id]=cur.text; saveH();
+  g.regDone=true; g.regShown=true; $('opts').innerHTML='';
+  if(right){
+    S.streak++; S.best=Math.max(S.best,S.streak);
+    let pts=5+lv+Math.min(S.streak,20); if(hintUsed) pts=Math.ceil(pts/2); S.score+=pts;
+    phase='regok'; renderSentence(); updateHUD(); save();
+    $('fb').innerHTML=`<div class="box good"><b>+${pts}</b><span class="ex">${g.reg.length?`<b>${regWords(g)}</b> exige a preposição “a”.`:'Certo: nenhuma palavra exige o “a” aqui.'}</span></div>`;
+    keepFb=true; setTimeout(()=>{ if(phase==='regok') ask(); },650);
+  } else {
+    S.streak=0; regPick=ti>=0?ti:null; phase='regfb'; waiting=true; renderSentence(); updateHUD(); save();
+    const why=g.reg.length?`Quem exige a preposição “a” é <b>${regWords(g)}</b>${ti>=0?` (não “${esc(ans)}”)`:''}.`:
+      `${ti>=0?`“${esc(ans)}” não exige o “a” aqui. `:''}Nenhuma palavra exige o “a” nesta lacuna: pode ser locução, hora, tempo, ou o “a” é só artigo. Descubra na lacuna.`;
+    $('fb').innerHTML=`<div class="box bad"><span class="ex">${why}</span><button class="btn go" id="bGo">Continuar ⏎</button></div>`;
+    $('bGo').onclick=next; focusGo();
+  }
+}
+const focusGo=()=>setTimeout(()=>$('bGo')&&$('bGo').focus({preventScroll:true}),30);
+
+/* ===== Passo 2: escolher a forma (níveis 1–6) ===== */
+function askForm(){
+  const g=G(), lv=S.level; phase='q'; waiting=false; hintUsed=false;
+  renderSentence();
+  const opts=fam(g,lv);
+  const step=S.order==='regente'?'<span class="mode">passo 2: a lacuna</span>':'';
+  $('q').innerHTML=`<span>Qual forma completa a lacuna?</span>${step}${modeTags(g)}`;
+  $('opts').className='opts forms';
+  $('opts').innerHTML=opts.map((o,i)=>{const c=formColor(o);
+    return `<button class="o" data-o="${o}" style="--sw:${c.bg};--swt:${c.fg}"><span class="k">${(i+1)%10}</span>${dispForm(g,o)}</button>`;}).join('');
+  $('opts').querySelectorAll('.o').forEach(b=>b.onclick=()=>answerForm(b.dataset.o));
+  if(!keepFb) $('fb').innerHTML=''; keepFb=false;
+  $('bHint').disabled=false;
+}
+function answerForm(o){
+  if(phase!=='q') return;
+  const g=G(), lv=S.level, right=g.forms.includes(o);
+  record(g,g.forms.join(' ou '),o,right,'forma');
+  g.rev=true; g.shown=right?o:g.forms[0]; phase='fb';
+  $('opts').querySelectorAll('.o').forEach(b=>{b.disabled=true;if(g.forms.includes(b.dataset.o))b.classList.add('right');else if(b.dataset.o===o)b.classList.add('picked');});
+  $('bHint').disabled=true;
+  const both=g.forms.length>1?`As duas formas estão certas: <b>${g.forms.join('</b> ou <b>')}</b>. `:'';
+  if(right){
+    S.streak++; S.best=Math.max(S.best,S.streak);
+    let pts=10+2*lv+Math.min(S.streak,20); if(hintUsed) pts=Math.ceil(pts/2); S.score+=pts;
+    $('fb').innerHTML=`<div class="box good"><b>+${pts}</b> ${chip(g.r)}<span class="ex">${both}${g.nt?g.nt+'.':''}</span></div>`;
+    renderSentence(); updateHUD(); save();
+    setTimeout(next, g.nt||both?1300:420);
+  } else {
+    S.streak=0; g.miss=true; waiting=true;
+    $('fb').innerHTML=`<div class="box bad"><span>Correto: <b>${g.forms.map(f=>dispForm(g,f)).join(' ou ')}</b> →</span> ${chip(g.r)}<span class="ex">${both}${explain(g)}</span><button class="btn go" id="bGo">Continuar ⏎</button></div>`;
+    $('bGo').onclick=next; renderSentence(); updateHUD(); save(); focusGo();
+  }
+  checkLevel();
+}
+
+/* ===== Árvore (níveis 7–12): decisão → regra, sempre com todas as opções ===== */
+function askTree(){
+  const g=G(), lv=S.level, d=dec(g.r);
+  phase='q'; waiting=false; hintUsed=false;
+  renderSentence();
+  let opts=tstep===0?DORDER.slice():RBY[d].slice();
+  if(lv===10||lv===12) shuffle(opts);
+  const crumb=tstep?`<span class="crumbs"><span class="crumb">${DEC[d].n}</span> › <b>?</b></span>`:'';
+  $('q').innerHTML=`<span>${tstep===0?'A crase nesta lacuna é…':'Qual regra?'}</span><span class="mode">árvore · etapa ${tstep+1}</span>${modeTags(g)}${crumb}`;
+  $('opts').className='opts';
+  $('opts').innerHTML=opts.map((o,i)=>{
+    const c=lv>=9?NEUTRAL:color(o,tstep>0);
+    return `<button class="o" data-o="${o}" style="--sw:${c.bg};--swt:${c.fg}"><span class="k">${(i+1)%10}</span>${keyLabel(o)}</button>`;}).join('');
+  $('opts').querySelectorAll('.o').forEach(b=>b.onclick=()=>answerTree(b.dataset.o));
+  if(!keepFb&&tstep===0) $('fb').innerHTML=''; keepFb=false;
+  $('bHint').disabled=lv===10||lv===12;
+}
+function answerTree(o){
+  if(phase!=='q') return;
+  const g=G(), lv=S.level, d=dec(g.r), correct=tstep===0?d:g.r;
+  tpick.push(o);
+  const pick=tpick.map(keyLabel).join(' › ');
+  if(o===correct){
+    tstep++;
+    if(tstep===1&&RBY[d].length>1){ $('fb').innerHTML=`<div class="box good"><span class="crumbs">${DEC[d].n} ✓</span></div>`; return askTree(); }
+    record(g,pathLabel(g.r),pick,true,'arvore');
+    g.rev=true; phase='fb'; S.streak++; S.best=Math.max(S.best,S.streak);
+    let pts=Math.round((10+2*lv+Math.min(S.streak,20))*1.5); if(hintUsed) pts=Math.ceil(pts/2); S.score+=pts;
+    $('opts').querySelectorAll('.o').forEach(b=>{b.disabled=true;if(b.dataset.o===o)b.classList.add('right');});
+    const both=g.forms.length>1?` · vale <b>${g.forms.join('</b> ou <b>')}</b>`:'';
+    $('fb').innerHTML=`<div class="box good"><b>+${pts}</b> ${chip(g.r)}<span class="ex">“${dispForm(g,g.forms[0])}”${both}${g.nt?' · '+g.nt:''}</span></div>`;
+    renderSentence(); updateHUD(); save();
+    setTimeout(next, g.nt?1300:550);
+  } else {
+    record(g,pathLabel(g.r),pick,false,'arvore');
+    g.rev=true; g.miss=true; phase='fb'; S.streak=0; waiting=true;
+    $('opts').querySelectorAll('.o').forEach(b=>{b.disabled=true;if(b.dataset.o===correct)b.classList.add('right');else if(b.dataset.o===o)b.classList.add('picked');});
+    $('fb').innerHTML=`<div class="box bad"><span>Correto: <b>${g.forms.map(f=>dispForm(g,f)).join(' ou ')}</b> →</span> ${chip(g.r)}<span class="ex">Você escolheu: ${pick}.<br>${explain(g)}</span><button class="btn go" id="bGo">Continuar ⏎</button></div>`;
+    $('bGo').onclick=next; renderSentence(); updateHUD(); save(); focusGo();
+  }
+  $('bHint').disabled=true;
+  checkLevel();
+}
+
+/* ===== Escrita por extenso (níveis 11–12): a justificativa da regra, só para o que já domina ===== */
+function writeOK(g){ if(S.level<11) return false; const m=S.mast['A:'+g.r]; return !!(m&&m.st>=(S.level===11?2:1)); }
+const normW=s=>s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9 ]/g,' ').split(/\s+/).filter(Boolean);
+function lev(a,b){const d=Array.from({length:a.length+1},(_,i)=>[i]);for(let j=1;j<=b.length;j++)d[0][j]=j;
+  for(let i=1;i<=a.length;i++)for(let j=1;j<=b.length;j++)d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]===b[j-1]?0:1));return d[a.length][b.length];}
+/* 0 = igual ou prefixo; 1 = com 1 letra errada; -1 = não casa. Radicais de até 3 letras precisam ser exatos. */
+function stemM(tok,st){ if(st.length<=3) return tok===st?0:-1; if(tok.startsWith(st)) return 0;
+  if(st.length>=5&&tok.length>=st.length-1&&(lev(tok.slice(0,st.length),st)<=1||lev(tok,st)<=1)) return 1; return -1; }
+/* Correção tolerante: acentos, maiúsculas, ordem e palavras extras não importam; aceita 1 letra errada em radicais de 5+ letras.
+   Cada grupo de w precisa aparecer (um dos radicais separados por |), e nada de "no" pode aparecer. */
+function checkWrite(txt,r){
+  const U=normW(txt), R=RULES[r]; let near=false;
+  const ok=U.length>0&&R.w.every(grp=>grp.split('|').some(st=>{ const stems=normW(st); return stems.every(s=>U.some(u=>{const m=stemM(u,s); if(m===1) near=true; return m>=0;})); }));
+  const bad=(R.no||[]).some(st=>U.some(u=>st.length<=3?u===st:u.startsWith(st)));
+  const decOk=U.some(u=>stemM(u,normW(DEC[dec(r)].n)[0])>=0);
+  return {ok:ok&&!bad,near:ok&&!bad&&near,decOk};
+}
+function askWrite(){
+  const g=G(), lv=S.level;
+  phase='q'; waiting=false; hintUsed=false; wmode=true;
+  renderSentence();
+  $('q').innerHTML=`<span>Escreva a <b>regra</b> que decide esta lacuna</span><span class="mode wr">✍ escrita</span>${modeTags(g)}`;
+  $('opts').className='opts';
+  $('opts').innerHTML=`<form id="wForm" class="wform" autocomplete="off"><input id="wIn" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Regra por extenso" placeholder="Ex.: antes de palavra masculina"><button class="btn go" type="submit">Responder ⏎</button></form>`;
+  $('wForm').onsubmit=e=>{e.preventDefault();answerWrite($('wIn').value);};
+  if(!keepFb) $('fb').innerHTML=`<div class="box hint"><span class="ex">Você já domina esta regra, então agora é por extenso: escreva a justificativa (ex.: <i>preposição + artigo feminino</i>, <i>lugar sem artigo</i>, <i>tempo passado</i>). Acentos, maiúsculas e a ordem das palavras não importam.</span></div>`; keepFb=false;
+  $('bHint').disabled=lv===12;
+  setTimeout(()=>$('wIn')&&$('wIn').focus({preventScroll:true}),30);
+}
+function answerWrite(txt){
+  if(phase!=='q'||!wmode) return;
+  if(!txt.trim()){ $('wIn').focus(); return; }
+  const g=G(), lv=S.level, res=checkWrite(txt,g.r);
+  record(g,pathLabel(g.r),txt.trim(),res.ok,'escrita');
+  g.rev=true; phase='fb'; wmode=false; $('wIn').disabled=true; $('bHint').disabled=true;
+  if(res.ok){
+    S.streak++; S.best=Math.max(S.best,S.streak);
+    let pts=2*(10+2*lv+Math.min(S.streak,20)); if(hintUsed) pts=Math.ceil(pts/2); S.score+=pts;
+    $('fb').innerHTML=`<div class="box good"><b>+${pts}</b> ${chip(g.r)}<span class="ex">“${dispForm(g,g.forms[0])}”${res.near?' · aceito, mas confira a grafia':''}${g.nt?' · '+g.nt:''}</span></div>`;
+    renderSentence(); updateHUD(); save();
+    setTimeout(next, res.near||g.nt?1500:750);
+  } else {
+    S.streak=0; g.miss=true; waiting=true;
+    $('fb').innerHTML=`<div class="box bad"><span>Correto: <b>${g.forms.map(f=>dispForm(g,f)).join(' ou ')}</b> →</span> ${chip(g.r)}<span class="ex">Você escreveu: “${esc(txt.trim())}”. ${res.decOk?'<b>A decisão está certa</b>, mas faltou a regra. ':''}Esta regra volta a ser treinada com opções.<br>${explain(g)}</span><button class="btn go" id="bGo">Continuar ⏎</button></div>`;
+    $('bGo').onclick=next; renderSentence(); updateHUD(); save(); focusGo();
+  }
+  checkLevel();
+}
+
+/* ===== Bônus do nível 12: caça ao acento (frase sem lacuna; marcar onde falta ou sobra o acento grave) ===== */
+const AWORD=/^(a|à|as|às|há|aquel[ea]s?|àquel[ea]s?|aquilo|àquilo)$/i;
+function flip(g){ const f=g.forms[0];
+  if(g.r==='ha.tempo') return 'a';
+  if(g.r==='pr.tempo') return Math.random()<.5?'há':'à';
+  if(f.startsWith('à')) return 'a'+f.slice(1);
+  if(f.startsWith('a')) return 'à'+f.slice(1);
+  return null; }
+function startHunt(){
+  phase='hunt'; waiting=false; hintUsed=false;
+  hunt={items:[],byTi:{},marks:new Set()};
+  const wantErr=Math.random()<.8; let flips=0;
+  cur.gaps.forEach(g=>{ g.hshown=g.forms[Math.floor(Math.random()*g.forms.length)]; g.hwrong=false;
+    if(wantErr&&Math.random()<.55){ const f=flip(g); if(f&&!g.forms.includes(f)){ g.hshown=f; g.hwrong=true; flips++; } } });
+  if(wantErr&&!flips){ const c=cur.gaps.map(g=>[g,flip(g)]).filter(([g,f])=>f&&!g.forms.includes(f)); if(c.length){ const [g,f]=c[Math.floor(Math.random()*c.length)]; g.hshown=f; g.hwrong=true; } }
+  let n=0;
+  cur.toks.forEach((x,i)=>{ const isG=x.gap!==undefined; if(isG||(x.w&&AWORD.test(x.w))){ const it={ti:i,gi:isG?x.gap:undefined,n:++n}; hunt.items.push(it); hunt.byTi[i]=it; } });
+  renderSentence();
+  $('q').innerHTML=`<span><b>Caça ao acento:</b> toque em cada palavra com acento grave <b>faltando</b> ou <b>sobrando</b></span><span class="mode hunt">bônus</span>`;
+  $('opts').className='opts';
+  $('opts').innerHTML=`<button class="o" id="bHunt" style="--sw:var(--ink);--swt:var(--card)"><span class="k">⏎</span>Confirmar</button>`;
+  $('bHunt').onclick=confirmHunt;
+  $('fb').innerHTML=`<div class="box hint"><span class="ex">A frase pode estar toda certa: nesse caso, só confirme. Teclas <kbd>1</kbd>–<kbd>0</kbd> marcam as palavras pelo número; <kbd>Enter</kbd> confirma.</span></div>`;
+  $('bHint').disabled=true;
+}
+function toggleHunt(i){ if(phase!=='hunt'||!hunt.byTi[i]) return; hunt.marks.has(i)?hunt.marks.delete(i):hunt.marks.add(i); renderSentence(); }
+function confirmHunt(){
+  if(phase!=='hunt') return;
+  const lv=S.level; let good=0; const msgs=[];
+  for(const it of hunt.items){ const marked=hunt.marks.has(it.ti);
+    if(it.gi!==undefined){ const g=cur.gaps[it.gi], ok=marked===g.hwrong;
+      record(g,g.hwrong?`trocar “${g.hshown}” por “${g.forms.join(' ou ')}”`:`“${g.hshown}” está certo`,marked?'marcou':'não marcou',ok,'caca');
+      g.rev=true; g.shown=g.forms.includes(g.hshown)?g.hshown:g.forms[0];
+      if(ok) good++; else { g.miss=true;
+        msgs.push(g.hwrong?`<b>“${g.hshown}”</b> está errado: o certo é <b>${g.forms.join(' ou ')}</b> ${chip(g.r)} ${RULES[g.r].x}${g.nt?' '+g.nt+'.':''}`:
+          `<b>“${g.hshown}”</b> estava certo ${chip(g.r)} ${g.forms.length>1?'(facultativa: as duas formas valem)':RULES[g.r].x}`); }
+    } else if(marked){ it.fp=true; const w=cur.toks[it.ti].w;
+      H.e.push([Date.now(),cur.id,-1,'',`“${w}” está certo`,'marcou',0,lv,'caca',0]);
+      S.ans++; S.win.push(0); if(S.win.length>20) S.win.shift();
+      msgs.push(`<b>“${esc(w)}”</b> não faz parte das lacunas e já estava certo.`); }
+  }
+  H.t[cur.id]=cur.text; saveH();
+  phase='huntfb'; $('opts').innerHTML='';
+  if(!msgs.length){ S.streak+=good; S.best=Math.max(S.best,S.streak); const pts=good*(12+2*lv); S.score+=pts;
+    const nErr=cur.gaps.filter(g=>g.hwrong).length;
+    $('fb').innerHTML=`<div class="box good"><b>+${pts}</b><span class="ex">${nErr?`Achou ${nErr===1?'o erro':'os '+nErr+' erros'}!`:'Certo: a frase não tinha erro.'}</span></div>`;
+    renderSentence(); updateHUD(); save(); setTimeout(()=>{ if(phase==='huntfb') endSentence(); },1300);
+  } else {
+    S.streak=0; waiting=true; renderSentence(); updateHUD(); save();
+    $('fb').innerHTML=`<div class="box bad"><span class="ex">${msgs.join('<br>')}</span><button class="btn go" id="bGo">Continuar ⏎</button></div>`;
+    $('bGo').onclick=next; focusGo();
+  }
+  checkLevel();
+}
+
+/* registra uma resposta (estatísticas + domínio + histórico completo) */
+function record(g,corr,ans,right,mode){
+  const r=g.r, key=cur.id+':'+g.i;
+  S.ans++; S.per[r]=S.per[r]||{a:0,o:0}; S.per[r].a++;
+  S.win.push(right?1:0); if(S.win.length>20) S.win.shift();
+  if(right){ S.ok++; S.per[r].o++; S.errW[key]=Math.max(0,(S.errW[key]||0)-1); if(!S.errW[key]) delete S.errW[key]; S.errT[r]=Math.max(0,(S.errT[r]||0)-.5); }
+  else { S.errW[key]=Math.min(6,(S.errW[key]||0)+2); S.errT[r]=(S.errT[r]||0)+1; }
+  const mk=mkey(r,mode), res=(right&&hintUsed)?null:bumpMast(mk,right); // acerto com dica não conta nem zera
+  if(res){ if(res.gain) setTimeout(()=>toast(`★ ${RULES[r].s}: ${STG[res.stage].need} acerto(s) seguido(s)! Pula as próximas ${res.gain} vezes.`),50);
+           if(res.reset) setTimeout(()=>toast(`${RULES[r].s} voltou ao início: acerte ${STG[0].need} seguidas.`),50); }
+  H.e.push([Date.now(),cur.id,g.i,r,corr,ans,right?1:0,S.level,mode,hintUsed?1:0]);
+  H.t[cur.id]=cur.text;
+  saveH();
+}
+
+function ask(){
+  const g=G(); wmode=false; regPick=null; if(phase!=='regok') keepFb=false;
+  if(S.order==='regente'&&!g.regDone) return askReg();
+  if(scope(g,S.level)==='tree'){ if(writeOK(g)) return askWrite(); tstep=0; tpick=[]; return askTree(); }
+  askForm();
+}
+
+function next(){
+  if(phase==='end'){ clearTimeout(endTimer); return newSentence(); }
+  if(phase==='regfb'){ waiting=false; regPick=null; return ask(); }
+  if(phase==='huntfb'){ waiting=false; return endSentence(); }
+  waiting=false; qi++;
+  if(qi>=queue.length) return endSentence();
+  ask();
+}
+
+function endSentence(){
+  phase='end'; S.sents++; save(); updateHUD();
+  const seen=[]; cur.gaps.forEach(g=>{ g.rev=true; g.regShown=true; if(!seen.includes(g.r)) seen.push(g.r); });
+  renderSentence();
+  $('q').innerHTML=`<span class="done">Frase completa! Revise as cores…</span>`;
+  $('opts').innerHTML='';
+  const miss=cur.gaps.filter(g=>g.miss).length;
+  $('fb').innerHTML=`<div class="box hint">${seen.map(r=>chip(r)).join(' ')}<span class="ex">${miss?`${miss} erro(s) nesta frase.`:'Sem erros!'}</span><button class="btn go" id="bGo">Próxima ⏎</button></div>`;
+  $('bGo').onclick=next;
+  endTimer=setTimeout(newSentence, miss?2600:1500);
+}
+
+function newSentence(){
+  clearTimeout(endTimer);
+  const s=pickSentence(); tries++;
+  S.recent.push(s.id); if(S.recent.length>Math.min(80,SENT.length-10)) S.recent.shift();
+  cur={id:s.id,text:s.text,toks:s.toks,gaps:s.gaps.map(g=>({...g}))};
+  queue=[]; regPick=null;
+  if(S.level===12&&Math.random()<.25){ tries=0; save(); return startHunt(); }
+  const useM=S.skipM&&tries<25;
+  cur.gaps.forEach(g=>{ const sc=scope(g,S.level);
+    if(sc==='skip'){ g.rev=true; g.skip=true; g.regShown=true; return; }
+    const k=mkey(g.r,sc==='tree'?'arvore':'forma');
+    if(useM&&k){
+      if(mSkipNow(k)){ g.rev=true; g.mast=true; g.regShown=true; return; }
+      if(mIsVerify(k)) g.review=true;
+    }
+    queue.push(g.i); });
+  qi=0; save();
+  if(!queue.length) return newSentence();
+  tries=0;
+  ask();
+}
+
+function checkLevel(){
+  const w=S.win; if(w.length<20) return;
+  const acc=w.reduce((a,b)=>a+b,0)/w.length;
+  if(acc>=.85&&S.level<MAXL) setLevel(S.level+1,`Subiu para o nível ${S.level+1}: ${LEVELS[S.level+1].d}`);
+  else if(acc<.5&&S.level>1) setLevel(S.level-1,`Voltando ao nível ${S.level-1} para reforçar a base`);
+}
+function setLevel(n,msg){ S.level=n; S.win=[]; save(); updateHUD(); if(msg) toast(msg); }
+
+function updateHUD(){
+  $('sScore').textContent=S.score.toLocaleString('pt-BR');
+  $('sStreak').textContent=S.streak;
+  $('sAcc').textContent=S.ans?Math.round(100*S.ok/S.ans)+'%':'–';
+  $('sSent').textContent=S.sents;
+  $('lvNum').textContent=S.level; $('lvName').textContent=LEVELS[S.level].n;
+  const w=S.win, acc=w.length?w.reduce((a,b)=>a+b,0)/w.length:0;
+  $('lvBar').style.width=(w.length?Math.round(acc*100):0)+'%';
+  $('lvInfo').textContent=S.level<MAXL?(w.length<20?`${w.length}/20 respostas · sobe com 85%`:`${Math.round(acc*100)}% nas últimas 20 · sobe com 85%`):'nível máximo';
+  $('lvSel').value=S.level; $('ordSel').value=S.order;
+}
+
+function renderLegend(){
+  $('legBody').innerHTML=DORDER.map(d=>{const col=color(d,false);
+    return `<details${d!=='ha'?' open':''}><summary><span class="dot" style="background:${col.bg}"></span>${DEC[d].n}</summary>
+      <ul>${RBY[d].map(r=>`<li><span class="dot" style="background:${color(r).bg}"></span>${RULES[r].n}</li>`).join('')}</ul>
+      <div class="tip">${DEC[d].tip}</div></details>`;}).join('')+
+    `<p class="method"><b>Método:</b> 1) ache quem exige a preposição “a” (verbo, nome, “até”); 2) veja se a palavra seguinte aceita o artigo “a”. Testes: troque por masculino (à → ao); vou a / volto da; troque “há” por “faz”.</p>`;
+}
+
+function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('on'),3200);}
+
+function hint(){
+  const lv=S.level;
+  if(hintUsed||lv===10||lv===12) return;
+  if(phase==='reg'){ hintUsed=true; const g=G();
+    $('fb').innerHTML=`<div class="box hint"><span class="ex"><b>Dica:</b> pergunte ao verbo ou ao nome antes da lacuna: “quem ___, ___ <b>a</b> algo/alguém?” (quem vai, vai a; quem obedece, obedece a; quem visita, visita algo, sem “a”). Locuções, horas e “há” não têm quem exija o “a”.${g.reg.some(i=>i>g.ti)?' <b>Atenção:</b> aqui o termo vem depois da lacuna.':''} <i>(acerto vale metade dos pontos)</i></span></div>`;
+    $('bHint').disabled=true; return; }
+  if(phase!=='q') return;
+  const g=G();
+  if(wmode){ hintUsed=true;
+    $('fb').innerHTML=`<div class="box hint"><span class="ex"><b>Dica:</b> a decisão é <b>${DEC[dec(g.r)].n}</b>… <i>(acerto vale metade dos pontos e não conta para o domínio)</i></span></div>`;
+    $('bHint').disabled=true; $('wIn')&&$('wIn').focus(); return; }
+  hintUsed=true;
+  const tree=scope(g,lv)==='tree', correct=tree?(tstep===0?dec(g.r):g.r):null;
+  const btns=[...$('opts').querySelectorAll('.o')].filter(b=>tree?b.dataset.o!==correct:!g.forms.includes(b.dataset.o)).sort(()=>Math.random()-.5);
+  btns.slice(0,Math.ceil(btns.length/2)).forEach(b=>b.disabled=true);
+  $('fb').innerHTML=`<div class="box hint"><span class="ex"><b>Dica:</b> ${RULES[g.r].h} <i>(acerto vale metade dos pontos)</i></span></div>`;
+  $('bHint').disabled=true;
+}
+
+/* ===== Histórico ===== */
+const MODE_N={regente:'quem exige o “a”',forma:'forma',arvore:'árvore (decisão → regra)',escrita:'escrita por extenso',caca:'caça ao acento'};
+const fmtD=ts=>new Date(ts).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'});
+const ruleName=r=>RULES[r]?pathLabel(r):'—';
+function histCSV(){
+  const q=v=>'"'+String(v).replace(/"/g,'""')+'"';
+  return ['data_hora;nivel;modo;frase;lacuna;resposta_correta;sua_resposta;regra;resultado;usou_dica']
+    .concat(H.e.map(([d,id,gi,r,c,a,ok,lv,m,h])=>[q(new Date(d).toLocaleString('pt-BR')),lv,q(MODE_N[m]||m),q(H.t[id]||''),gi>=0?gi+1:'',q(c),q(a),q(ruleName(r)),ok?'acerto':'erro',h?'sim':'não'].join(';'))).join('\n');
+}
+function histTable(f){
+  const rows=H.e.filter(r=>f==='all'||(f==='err'?!r[6]:r[6])).slice(-150).reverse();
+  if(!rows.length) return '<p class="done">Nenhuma resposta registrada ainda.</p>';
+  return `<div class="hwrap"><table class="stack htab"><thead><tr><th>Quando</th><th>Frase</th><th>Correto</th><th>Sua resposta</th><th></th></tr></thead><tbody>${
+    rows.map(([d,id,gi,r,c,a,ok,lv,m,h])=>`<tr class="${ok?'hok':'herr'}"><td>${fmtD(d)}</td><td>${esc(H.t[id]||'')}<div class="hs">${gi>=0?'lacuna '+(gi+1)+' · ':''}${esc(MODE_N[m]||m)}${RULES[r]?' · '+esc(RULES[r].s):''}</div></td><td>${esc(c)}</td><td>${esc(a)}${h?' <small>(dica)</small>':''}</td><td>${ok?'✓':'✗'}</td></tr>`).join('')
+  }</tbody></table></div>${rows.length===150?'<p class="done">Mostrando as 150 mais recentes. “Copiar CSV” leva o histórico inteiro.</p>':''}`;
+}
+function mastRows(){
+  const score=m=>m.st*100+m.c*10+(m.sk>0?1:0);
+  const ks=Object.keys(S.mast).filter(k=>RULES[k.slice(2)]).sort((a,b)=>score(S.mast[b])-score(S.mast[a]));
+  if(!ks.length) return '<p class="done">Ainda sem dados. Responda algumas frases.</p>';
+  const groups={F:[],A:[]}; ks.forEach(k=>groups[k[0]]&&groups[k[0]].push(k));
+  return Object.entries(groups).filter(g=>g[1].length).map(([p,arr])=>`<p class="done" style="margin:10px 0 4px">Modo ${mModeName[p]}</p>`+arr.map(k=>{
+    const r=k.slice(2), m=S.mast[k], col=color(r);
+    const pc=Math.round(100*(m.st+(m.c/STG[m.st].need))/STG.length);
+    const info=m.sk>0?`★ pula ${m.sk}`:m.st>0?`conferir`:`${m.c}/${STG[0].need}`;
+    return `<div class="srow"><span>${m.st>0?'★'.repeat(Math.min(m.st,5))+' ':''}${mLabel(k)}</span><div class="sbar" title="Etapa ${m.st+1} de ${STG.length}"><i style="width:${pc}%;background:${col.bg}"></i></div><span class="num">${info}</span></div>`;}).join('')).join('');
+}
+function stats(){
+  const row=(lab,p,col)=>{const pc=p.a?Math.round(100*p.o/p.a):0;return `<div class="srow"><span>${lab}</span><div class="sbar"><i style="width:${pc}%;background:${col}"></i></div><span class="num">${p.a?pc+'%':'–'} <small>(${p.o}/${p.a})</small></span></div>`;};
+  const rows=DORDER.map(d=>{ const tot={a:0,o:0}; RBY[d].forEach(r=>{const p=S.per[r];if(p){tot.a+=p.a;tot.o+=p.o;}});
+    return row(`<span class="dot" style="display:inline-block;vertical-align:-2px;background:${color(d,false).bg}"></span> <b>${DEC[d].n}</b>`,tot,color(d,false).bg)+
+      RBY[d].filter(r=>S.per[r]).map(r=>row(`&nbsp;&nbsp;&nbsp;${RULES[r].s}`,S.per[r],color(r).bg)).join(''); }).join('')+
+    row('<b>Quem exige o “a”</b> (passo 1)',S.reg,'var(--mute)');
+  const byId=Object.fromEntries(SENT.map(s=>[s.id,s]));
+  const miss=Object.entries(S.errW).filter(e=>e[1]>0).sort((a,b)=>b[1]-a[1]).slice(0,14).map(([k])=>{
+    const [id,gi]=k.split(':').map(Number), s=byId[id]; if(!s) return ''; const g=s.gaps[gi], nx=s.toks[g.ti+1], c=color(g.r);
+    return `<span class="chip" title="${esc(s.text)}" style="background:${c.bg};color:${c.fg}">${g.forms.join('/')} ${nx&&nx.w?esc(nx.w):''} · ${RULES[g.r].s}</span>`;}).join('');
+  const nOk=H.e.filter(r=>r[6]).length;
+  $('mbox').innerHTML=`<h2>Estatísticas</h2>
+    <p>${S.ans} respostas · ${S.ans?Math.round(100*S.ok/S.ans):0}% de acerto · ${S.sents} frases · melhor sequência: <b>${S.best}</b></p>
+    ${rows}
+    <h3>Domínio</h3><p class="done" style="font-weight:600;margin-top:-6px">Acerte ${STG.map(g=>g.need).join(' → ')} seguidas para pular ${STG.map(g=>g.skip).join(' → ')} vezes. Um erro volta ao início. Mais de ${STALE_DAYS} dias sem responder também faz a regra voltar.</p>
+    <label class="row" style="margin-top:0"><input type="checkbox" id="mSkip" ${S.skipM?'checked':''}> Pular o que já domino (as perguntas voltam para conferir)</label>
+    ${mastRows()}
+    <h3>Lacunas para revisar</h3><div class="miss">${miss||'<span class="done">Nenhuma pendente. Muito bem!</span>'}</div>
+    <h3>Histórico de respostas <small class="done">(${H.e.length} registradas: ${nOk} acertos, ${H.e.length-nOk} erros)</small></h3>
+    <div class="row"><select id="hFil" aria-label="Filtrar histórico"><option value="all">Todas</option><option value="err">Só erros</option><option value="ok">Só acertos</option></select>
+      <button class="btn" id="hCopy">Copiar CSV</button><button class="btn" id="hDel">Apagar histórico</button></div>
+    <div id="hBody">${histTable('all')}</div><textarea id="hTxt" class="htxt" readonly hidden></textarea>
+    <div class="row" style="margin-top:18px"><button class="btn" id="mClose">Fechar</button><button class="btn" id="mReset">Zerar progresso (mantém o histórico)</button></div>`;
+  $('modal').classList.add('on');
+  $('mSkip').onchange=e=>{S.skipM=e.target.checked;save();};
+  $('hFil').onchange=e=>$('hBody').innerHTML=histTable(e.target.value);
+  $('hCopy').onclick=async e=>{const csv=histCSV();
+    try{await navigator.clipboard.writeText(csv);e.target.textContent='Copiado!';}
+    catch(err){const t=$('hTxt');t.hidden=false;t.value=csv;t.focus();t.select();e.target.textContent='Selecionado abaixo: Ctrl+C';}};
+  $('hDel').onclick=e=>{ if(e.target.dataset.c){H={e:[],t:{}};saveH();stats();} else {e.target.dataset.c=1;e.target.textContent='Clique de novo para apagar tudo';} };
+  $('mClose').onclick=()=>$('modal').classList.remove('on');
+  $('mReset').onclick=e=>{ if(e.target.dataset.c){const o=S.order;S=fresh();S.order=o;save();$('modal').classList.remove('on');updateHUD();newSentence();} else {e.target.dataset.c=1;e.target.textContent='Clique de novo para confirmar';} };
+}
+
+/* ================= EVENTOS ================= */
+$('lvSel').innerHTML=LEVELS.slice(1).map((l,i)=>`<option value="${i+1}">Nível ${i+1}: ${l.n}</option>`).join('');
+$('lvSel').onchange=e=>{setLevel(+e.target.value);newSentence();};
+$('ordSel').onchange=e=>{S.order=e.target.value;save();newSentence();};
+$('bHint').onclick=hint;
+$('bSkip').onclick=()=>newSentence();
+$('bStats').onclick=stats;
+$('bLeg').onclick=()=>$('wrap').classList.toggle('nolegend');
+$('modal').onclick=e=>{if(e.target.id==='modal')$('modal').classList.remove('on');};
+$('sent').addEventListener('click',e=>{const w=e.target.closest('.w[data-i]'); if(!w) return;
+  if(phase==='reg') answerReg(+w.dataset.i); else if(phase==='hunt') toggleHunt(+w.dataset.i);});
+/* Proteção contra clique duplo: na área do jogo, ignora cliques repetidos muito rápidos
+   e cliques que caem em botões que acabaram de aparecer (ex.: passo seguinte). O teclado não sofre bloqueio. */
+{ const GAP=320; let lastClick=0, shownAt=0;
+  const mo=new MutationObserver(()=>{shownAt=performance.now();});
+  ['opts','fb'].forEach(id=>mo.observe($(id),{childList:true}));
+  document.addEventListener('click',e=>{
+    if(!e.isTrusted||e.detail===0) return;
+    if(!e.target.closest('.paper')) return;
+    if(!e.target.closest('button,.w[data-i]')) return;
+    const now=performance.now();
+    if(e.detail>1||now-lastClick<GAP||now-shownAt<GAP){ e.stopPropagation(); e.preventDefault(); return; }
+    lastClick=now;
+  },true); }
+document.addEventListener('keydown',e=>{
+  if(e.target.tagName==='SELECT'||e.target.tagName==='TEXTAREA'||e.target.tagName==='INPUT'||e.ctrlKey||e.metaKey||e.altKey) return;
+  if($('modal').classList.contains('on')){ if(e.key==='Escape')$('modal').classList.remove('on'); return; }
+  if(e.key==='l'||e.key==='L'){ $('wrap').classList.toggle('nolegend'); return; }
+  if(phase==='hunt'){
+    if(e.key==='Enter'){e.preventDefault();return confirmHunt();}
+    if(e.key===' '&&e.target.closest&&e.target.closest('.w[data-i]')){e.preventDefault();return toggleHunt(+e.target.closest('.w[data-i]').dataset.i);}
+    if(/^[0-9]$/.test(e.key)){const n=e.key==='0'?10:+e.key;const it=hunt.items.find(x=>x.n===n);if(it)toggleHunt(it.ti);}
+    return;
+  }
+  if(phase==='reg'){
+    if(e.key==='0'){ return answerReg(-1); }
+    if(/^[1-9]$/.test(e.key)){ const ti=byNum[+e.key]; if(ti!==undefined) answerReg(ti); return; }
+    if((e.key==='Enter'||e.key===' ')&&e.target.closest&&e.target.closest('.w[data-i]')){e.preventDefault();return answerReg(+e.target.closest('.w[data-i]').dataset.i);}
+    if(e.key==='h'||e.key==='H') hint();
+    return;
+  }
+  if(e.key==='Enter'||e.key===' '){ if(waiting||phase==='end'){e.preventDefault();next();} return; }
+  if(/^[0-9]$/.test(e.key)&&phase==='q'){ const i=e.key==='0'?9:+e.key-1; const b=$('opts').querySelectorAll('.o')[i]; if(b&&!b.disabled) b.click(); return; }
+  if(e.key==='h'||e.key==='H') hint();
+});
+
+/* para os testes automáticos */
+window.__T={SENT,RULES,DEC,ERRORS,COUNT,checkWrite,scope,fam,flip,get S(){return S;},get cur(){return cur;},get phase(){return phase;},get queue(){return queue;},get qi(){return qi;},get tstep(){return tstep;},get hunt(){return hunt;},byNum:()=>byNum};
+
+renderLegend(); updateHUD(); newSentence();
+}
+</script>
+</body>
+</html>
