@@ -834,18 +834,24 @@ function answerReg(ti){
   if(right){
     S.streak++; S.best=Math.max(S.best,S.streak);
     let pts=5+lv+Math.min(S.streak,20); if(hintUsed) pts=Math.ceil(pts/2); S.score+=pts;
-    phase='regok'; renderSentence(); updateHUD(); save();
-    $('fb').innerHTML=`<div class="box good"><b>+${pts}</b><span class="ex">${g.reg.length?`<b>${regWords(g)}</b> exige a preposição “a”.`:'Certo: nenhuma palavra exige o “a” aqui.'}</span></div>`;
-    keepFb=true; setTimeout(()=>{ if(phase==='regok') ask(); },650);
+    phase='regfb'; renderSentence(); updateHUD(); save();
+    $('fb').innerHTML=`<div class="box good"><b>+${pts}</b><span class="ex">${g.reg.length?`<b>${regWords(g)}</b> exige a preposição “a”.`:'Certo: nenhuma palavra exige o “a” aqui.'}</span>${goBtn('Continuar: a lacuna ⏎')}</div>`;
+    armGo();
   } else {
     S.streak=0; regPick=ti>=0?ti:null; phase='regfb'; waiting=true; renderSentence(); updateHUD(); save();
     const why=g.reg.length?`Quem exige a preposição “a” é <b>${regWords(g)}</b>${ti>=0?` (não “${esc(ans)}”)`:''}.`:
       `${ti>=0?`“${esc(ans)}” não exige o “a” aqui. `:''}Nenhuma palavra exige o “a” nesta lacuna: pode ser locução, hora, tempo, ou o “a” é só artigo. Descubra na lacuna.`;
-    $('fb').innerHTML=`<div class="box bad"><span class="ex">${why}</span><button class="btn go" id="bGo">Continuar ⏎</button></div>`;
+    $('fb').innerHTML=`<div class="box bad"><span class="ex">${why}</span><button class="btn go" id="bGo">Continuar: a lacuna ⏎</button></div>`;
     $('bGo').onclick=next; focusGo();
   }
 }
 const focusGo=()=>setTimeout(()=>$('bGo')&&$('bGo').focus({preventScroll:true}),30);
+/* Sem avanço automático: depois de cada resposta o jogo espera o jogador clicar em "Próxima" (ou Enter/Espaço).
+   Na última lacuna da frase, a frase inteira já aparece colorida e o botão leva direto à próxima frase. */
+const isLast=()=>qi>=queue.length-1;
+function finishSentence(){ if(cur.done) return; cur.done=true; S.sents++; cur.gaps.forEach(g=>{g.rev=true;g.regShown=true;}); }
+function goBtn(label){ return `<button class="btn go" id="bGo">${label||(cur.done?'Próxima frase ⏎':'Próxima ⏎')}</button>`; }
+function armGo(){ waiting=true; $('bGo').onclick=next; focusGo(); }
 
 /* ===== Passo 2: escolher a forma (níveis 1–6) ===== */
 function askForm(){
@@ -865,19 +871,18 @@ function answerForm(o){
   if(phase!=='q') return;
   const g=G(), lv=S.level, right=g.forms.includes(o);
   record(g,g.forms.join(' ou '),o,right,'forma');
-  g.rev=true; g.shown=right?o:g.forms[0]; phase='fb';
+  g.rev=true; g.shown=right?o:g.forms[0]; phase='fb'; if(isLast()) finishSentence();
   $('opts').querySelectorAll('.o').forEach(b=>{b.disabled=true;if(g.forms.includes(b.dataset.o))b.classList.add('right');else if(b.dataset.o===o)b.classList.add('picked');});
   $('bHint').disabled=true;
   const both=g.forms.length>1?`As duas formas estão certas: <b>${g.forms.join('</b> ou <b>')}</b>. `:'';
   if(right){
     S.streak++; S.best=Math.max(S.best,S.streak);
     let pts=10+2*lv+Math.min(S.streak,20); if(hintUsed) pts=Math.ceil(pts/2); S.score+=pts;
-    $('fb').innerHTML=`<div class="box good"><b>+${pts}</b> ${chip(g.r)}<span class="ex">${both}${g.nt?g.nt+'.':''}</span></div>`;
-    renderSentence(); updateHUD(); save();
-    setTimeout(next, g.nt||both?1300:420);
+    $('fb').innerHTML=`<div class="box good"><b>+${pts}</b> ${chip(g.r)}<span class="ex">${both}${g.nt?g.nt+'.':''}</span>${goBtn()}</div>`;
+    renderSentence(); updateHUD(); save(); armGo();
   } else {
     S.streak=0; g.miss=true; waiting=true;
-    $('fb').innerHTML=`<div class="box bad"><span>Correto: <b>${g.forms.map(f=>dispForm(g,f)).join(' ou ')}</b> →</span> ${chip(g.r)}<span class="ex">${both}${explain(g)}</span><button class="btn go" id="bGo">Continuar ⏎</button></div>`;
+    $('fb').innerHTML=`<div class="box bad"><span>Correto: <b>${g.forms.map(f=>dispForm(g,f)).join(' ou ')}</b> →</span> ${chip(g.r)}<span class="ex">${both}${explain(g)}</span>${goBtn()}</div>`;
     $('bGo').onclick=next; renderSentence(); updateHUD(); save(); focusGo();
   }
   checkLevel();
@@ -909,18 +914,17 @@ function answerTree(o){
     tstep++;
     if(tstep===1&&RBY[d].length>1){ $('fb').innerHTML=`<div class="box good"><span class="crumbs">${DEC[d].n} ✓</span></div>`; return askTree(); }
     record(g,pathLabel(g.r),pick,true,'arvore');
-    g.rev=true; phase='fb'; S.streak++; S.best=Math.max(S.best,S.streak);
+    g.rev=true; phase='fb'; if(isLast()) finishSentence(); S.streak++; S.best=Math.max(S.best,S.streak);
     let pts=Math.round((10+2*lv+Math.min(S.streak,20))*1.5); if(hintUsed) pts=Math.ceil(pts/2); S.score+=pts;
     $('opts').querySelectorAll('.o').forEach(b=>{b.disabled=true;if(b.dataset.o===o)b.classList.add('right');});
     const both=g.forms.length>1?` · vale <b>${g.forms.join('</b> ou <b>')}</b>`:'';
-    $('fb').innerHTML=`<div class="box good"><b>+${pts}</b> ${chip(g.r)}<span class="ex">“${dispForm(g,g.forms[0])}”${both}${g.nt?' · '+g.nt:''}</span></div>`;
-    renderSentence(); updateHUD(); save();
-    setTimeout(next, g.nt?1300:550);
+    $('fb').innerHTML=`<div class="box good"><b>+${pts}</b> ${chip(g.r)}<span class="ex">“${dispForm(g,g.forms[0])}”${both}${g.nt?' · '+g.nt:''}</span>${goBtn()}</div>`;
+    renderSentence(); updateHUD(); save(); armGo();
   } else {
     record(g,pathLabel(g.r),pick,false,'arvore');
-    g.rev=true; g.miss=true; phase='fb'; S.streak=0; waiting=true;
+    g.rev=true; g.miss=true; phase='fb'; if(isLast()) finishSentence(); S.streak=0; waiting=true;
     $('opts').querySelectorAll('.o').forEach(b=>{b.disabled=true;if(b.dataset.o===correct)b.classList.add('right');else if(b.dataset.o===o)b.classList.add('picked');});
-    $('fb').innerHTML=`<div class="box bad"><span>Correto: <b>${g.forms.map(f=>dispForm(g,f)).join(' ou ')}</b> →</span> ${chip(g.r)}<span class="ex">Você escolheu: ${pick}.<br>${explain(g)}</span><button class="btn go" id="bGo">Continuar ⏎</button></div>`;
+    $('fb').innerHTML=`<div class="box bad"><span>Correto: <b>${g.forms.map(f=>dispForm(g,f)).join(' ou ')}</b> →</span> ${chip(g.r)}<span class="ex">Você escolheu: ${pick}.<br>${explain(g)}</span>${goBtn()}</div>`;
     $('bGo').onclick=next; renderSentence(); updateHUD(); save(); focusGo();
   }
   $('bHint').disabled=true;
@@ -961,16 +965,15 @@ function answerWrite(txt){
   if(!txt.trim()){ $('wIn').focus(); return; }
   const g=G(), lv=S.level, res=checkWrite(txt,g.r);
   record(g,pathLabel(g.r),txt.trim(),res.ok,'escrita');
-  g.rev=true; phase='fb'; wmode=false; $('wIn').disabled=true; $('bHint').disabled=true;
+  g.rev=true; phase='fb'; if(isLast()) finishSentence(); wmode=false; $('wIn').disabled=true; $('bHint').disabled=true;
   if(res.ok){
     S.streak++; S.best=Math.max(S.best,S.streak);
     let pts=2*(10+2*lv+Math.min(S.streak,20)); if(hintUsed) pts=Math.ceil(pts/2); S.score+=pts;
-    $('fb').innerHTML=`<div class="box good"><b>+${pts}</b> ${chip(g.r)}<span class="ex">“${dispForm(g,g.forms[0])}”${res.near?' · aceito, mas confira a grafia':''}${g.nt?' · '+g.nt:''}</span></div>`;
-    renderSentence(); updateHUD(); save();
-    setTimeout(next, res.near||g.nt?1500:750);
+    $('fb').innerHTML=`<div class="box good"><b>+${pts}</b> ${chip(g.r)}<span class="ex">“${dispForm(g,g.forms[0])}”${res.near?' · aceito, mas confira a grafia':''}${g.nt?' · '+g.nt:''}</span>${goBtn()}</div>`;
+    renderSentence(); updateHUD(); save(); armGo();
   } else {
     S.streak=0; g.miss=true; waiting=true;
-    $('fb').innerHTML=`<div class="box bad"><span>Correto: <b>${g.forms.map(f=>dispForm(g,f)).join(' ou ')}</b> →</span> ${chip(g.r)}<span class="ex">Você escreveu: “${esc(txt.trim())}”. ${res.decOk?'<b>A decisão está certa</b>, mas faltou a regra. ':''}Esta regra volta a ser treinada com opções.<br>${explain(g)}</span><button class="btn go" id="bGo">Continuar ⏎</button></div>`;
+    $('fb').innerHTML=`<div class="box bad"><span>Correto: <b>${g.forms.map(f=>dispForm(g,f)).join(' ou ')}</b> →</span> ${chip(g.r)}<span class="ex">Você escreveu: “${esc(txt.trim())}”. ${res.decOk?'<b>A decisão está certa</b>, mas faltou a regra. ':''}Esta regra volta a ser treinada com opções.<br>${explain(g)}</span>${goBtn()}</div>`;
     $('bGo').onclick=next; renderSentence(); updateHUD(); save(); focusGo();
   }
   checkLevel();
@@ -1018,14 +1021,14 @@ function confirmHunt(){
       msgs.push(`<b>“${esc(w)}”</b> não faz parte das lacunas e já estava certo.`); }
   }
   H.t[cur.id]=cur.text; saveH();
-  phase='huntfb'; $('opts').innerHTML='';
+  phase='huntfb'; $('opts').innerHTML=''; finishSentence();
   if(!msgs.length){ S.streak+=good; S.best=Math.max(S.best,S.streak); const pts=good*(12+2*lv); S.score+=pts;
     const nErr=cur.gaps.filter(g=>g.hwrong).length;
-    $('fb').innerHTML=`<div class="box good"><b>+${pts}</b><span class="ex">${nErr?`Achou ${nErr===1?'o erro':'os '+nErr+' erros'}!`:'Certo: a frase não tinha erro.'}</span></div>`;
-    renderSentence(); updateHUD(); save(); setTimeout(()=>{ if(phase==='huntfb') endSentence(); },1300);
+    $('fb').innerHTML=`<div class="box good"><b>+${pts}</b><span class="ex">${nErr?`Achou ${nErr===1?'o erro':'os '+nErr+' erros'}!`:'Certo: a frase não tinha erro.'}</span>${goBtn()}</div>`;
+    renderSentence(); updateHUD(); save(); armGo();
   } else {
     S.streak=0; waiting=true; renderSentence(); updateHUD(); save();
-    $('fb').innerHTML=`<div class="box bad"><span class="ex">${msgs.join('<br>')}</span><button class="btn go" id="bGo">Continuar ⏎</button></div>`;
+    $('fb').innerHTML=`<div class="box bad"><span class="ex">${msgs.join('<br>')}</span>${goBtn()}</div>`;
     $('bGo').onclick=next; focusGo();
   }
   checkLevel();
@@ -1056,9 +1059,9 @@ function ask(){
 function next(){
   if(phase==='end'){ clearTimeout(endTimer); return newSentence(); }
   if(phase==='regfb'){ waiting=false; regPick=null; return ask(); }
-  if(phase==='huntfb'){ waiting=false; return endSentence(); }
+  if(cur.done){ waiting=false; return newSentence(); }
   waiting=false; qi++;
-  if(qi>=queue.length) return endSentence();
+  if(qi>=queue.length) return newSentence();
   ask();
 }
 
@@ -1071,7 +1074,7 @@ function endSentence(){
   const miss=cur.gaps.filter(g=>g.miss).length;
   $('fb').innerHTML=`<div class="box hint">${seen.map(r=>chip(r)).join(' ')}<span class="ex">${miss?`${miss} erro(s) nesta frase.`:'Sem erros!'}</span><button class="btn go" id="bGo">Próxima ⏎</button></div>`;
   $('bGo').onclick=next;
-  endTimer=setTimeout(newSentence, miss?2600:1500);
+  waiting=true;
 }
 
 function newSentence(){

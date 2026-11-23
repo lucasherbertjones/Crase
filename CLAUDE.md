@@ -55,7 +55,7 @@ Uma frase por linha:
 1. **Passo 1 (ordem recomendada, equivalente ao "verbo primeiro")**: para cada lacuna, tocar na palavra
    que exige a preposição "a", ou em "Nenhuma" (tecla 0). As 9 palavras mais próximas da lacuna ganham as
    teclas 1–9. Acertou: a palavra fica sublinhada com a cor da regra ("exige “a”"). Errou: mostra quem
-   exige, sem entregar a regra, e segue para a lacuna. Opção "direto à lacuna" no menu. O passo 1 entra no
+   exige, sem entregar a regra. Nos dois casos, "Continuar: a lacuna" leva ao passo 2. Opção "direto à lacuna" no menu. O passo 1 entra no
    histórico e nas estatísticas, mas não no domínio nem na subida de nível.
 2. **Passo 2, níveis 1–6: escolher a forma.** Botões coloridos pela forma (à/às/àquele = verde, a/as/aquele
    = vermelho, há = azul). Opções por nível: 1–2 a/à; 3–4 a/à/as/às; 5+ incluem há. "Aquele" e "a qual"
@@ -75,8 +75,11 @@ Uma frase por linha:
 6. **Bônus do nível 12: caça ao acento** (25% das frases). A frase aparece sem lacunas; em 80% delas uma ou
    mais lacunas vêm com o acento trocado (`flip`). Todas as palavras "a/à/as/às/há/aquele…" da frase são
    marcáveis (teclas 1–0), inclusive as que não são lacuna, para não entregar onde está o erro.
-7. **Feedback**: acerto avança em ~0,4 s (1,3 s com nota); erro mostra a forma certa, a regra, o teste
-   prático, a nota da frase e quem exige o "a"; continua com Enter. Frase completa fica 1,5 s colorida.
+7. **Feedback sem avanço automático** (pedido do usuário): depois de CADA resposta, certa ou errada, o jogo
+   espera o clique em "Próxima" (ou Enter/Espaço). Erro mostra a forma certa, a regra, o teste prático, a
+   nota da frase e quem exige o "a". Na última lacuna, a frase inteira já aparece colorida e o botão vira
+   "Próxima frase" (`finishSentence`, `goBtn`, `armGo`). Só a passagem decisão → regra da árvore é imediata,
+   porque é a mesma pergunta. Não reintroduzir `setTimeout(next, …)`.
 8. **Domínio por etapas**: 5→3→2→1→1→1 acertos seguidos pulam a regra 5→10→20→40→80→160 vezes; erro volta
    ao início; mais de 5 dias sem responder faz voltar; acerto com dica não conta. Chaves por regra e modo:
    `F:regra` (forma) e `A:regra` (árvore e escrita). Domínio por regra, não por frase.
