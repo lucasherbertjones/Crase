@@ -3,7 +3,7 @@ const URL='file://'+require('path').resolve(__dirname,'../../index.html');
 async function page(b,seed){ const ctx=await b.newContext({deviceScaleFactor:1,viewport:{width:1280,height:860}}); const p=await ctx.newPage();
  p.errs=[]; p.on('console',m=>{if(m.type()==='error'&&!/Failed to load resource/.test(m.text()))p.errs.push(m.text());}); p.on('pageerror',e=>p.errs.push('PAGEERR '+e.message));
  await p.route(/fonts\.(googleapis|gstatic)/,r=>r.abort());
- if(seed) await p.addInitScript(s=>{ if(!sessionStorage.getItem('seeded')){localStorage.setItem('crase.v1',JSON.stringify(s));sessionStorage.setItem('seeded',1);} },seed);
+ if(seed) await p.addInitScript(s=>{ if(!sessionStorage.getItem('seeded')){localStorage.setItem('crase.v1',JSON.stringify(s));localStorage.setItem('crase.intro','1');sessionStorage.setItem('seeded',1);} },seed);
  await p.goto(URL); return p; }
 (async()=>{
  const b=await chromium.launch();

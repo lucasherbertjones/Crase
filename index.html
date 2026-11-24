@@ -7,54 +7,89 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,500;7..72,700&family=Nunito:wght@500;700;800&display=swap" rel="stylesheet">
 <style>
-/* VOICE: estudo rápido e alegre, como um caderno marcado com canetas marca-texto.
-   IDEA: a frase é uma linha de caderno com lacunas; cada resposta "pinta" a lacuna com a cor da decisão
-   (roxo = obrigatória, cinza-chumbo = proibida, âmbar = facultativa, azul = "há") e o tom da regra.
-   Verde e vermelho ficam RESERVADOS para certo e errado (aviso grande, selo na lacuna, botões).
-   COLOUR and TYPE: papel branco/tinta escura; Literata para a frase, Nunito para a interface.
-   LAYOUT: placar no topo, frase grande, opções em botões numerados, legenda ao lado/abaixo. */
-:root{color-scheme:light dark;--bg:light-dark(#fbfaf7,#14151a);--card:light-dark(#ffffff,#1d1f26);--ink:light-dark(#1b1c22,#ecebe6);--mute:light-dark(#6b6d78,#9a9ca8);--line:light-dark(#e6e3da,#2d3039);--ok:#16a34a;--okd:#15803d;--bad:#dc2626}
+/* DESIGN (redesenho de usabilidade)
+   - Uma tarefa por vez: o cartão central mostra, de cima para baixo, a instrução (o que fazer), a frase,
+     as opções e o resultado. Tudo o que não é jogar (nível, ordem, regras, progresso) sai da frente:
+     nível e ajustes numa folha própria, regras num painel lateral (gaveta no celular), progresso num modal.
+   - Cores: roxo = obrigatória, cinza-chumbo = proibida, âmbar = facultativa, azul = "há".
+     Verde e vermelho ficam RESERVADOS para certo e errado (faixa grande, selo na lacuna, botões).
+   - Tipografia: Literata para a frase (o "caderno"), Nunito para a interface. */
+:root{color-scheme:light dark;--bg:light-dark(#f6f5f1,#121318);--card:light-dark(#ffffff,#1c1e25);--soft:light-dark(#f1efe9,#24262e);
+  --ink:light-dark(#1b1c22,#ecebe6);--mute:light-dark(#686a75,#9a9ca8);--line:light-dark(#e4e1d8,#2e313a);
+  --ok:#16a34a;--okd:#15803d;--bad:#dc2626;--focus:#3b82f6;--r:16px;--shadow:0 1px 2px #0000000d,0 12px 32px -20px #0003}
 *{box-sizing:border-box;min-width:0}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 Nunito,system-ui,sans-serif;overflow-x:clip}
 button{font:inherit;color:inherit;cursor:pointer}
-button:focus-visible,select:focus-visible{outline:3px solid #3b82f6;outline-offset:2px}
-.top{display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px;padding:12px max(4vw,14px);border-bottom:1px solid var(--line);background:var(--card)}
-.top h1{font:700 20px/1.1 Literata,serif;margin:0 auto 0 0}
-.stat{display:flex;flex-direction:column;align-items:flex-end;line-height:1.1}
-.stat b{font-size:19px;font-variant-numeric:tabular-nums}.stat span{font-size:12px;color:var(--mute)}
-.tb{display:flex;gap:6px}
-.btn{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:8px 12px;min-height:40px;font-weight:700;font-size:14px}
-.btn:hover{border-color:var(--mute)}
-.btn:disabled{opacity:.45;cursor:default}
-.wrap{max-width:1240px;margin:0 auto;padding:clamp(14px,3vw,32px) max(4vw,14px);display:grid;grid-template-columns:minmax(0,1fr) 290px;gap:24px}
+button:focus-visible,select:focus-visible,summary:focus-visible,.w[data-i]:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+kbd{font:700 11px/1.4 Nunito,sans-serif;border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:0 5px;background:var(--card);color:var(--mute)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* ---------- Barra superior ---------- */
+.top{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:10px 16px;padding:10px max(3vw,14px);background:color-mix(in srgb,var(--card) 92%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:8px}
+.logo{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:hsl(272 50% 50%);color:#fff;font:700 22px/1 Literata,serif}
+.brand h1{font:700 20px/1 Literata,serif;margin:0}
+.lvpill{display:flex;align-items:center;gap:10px;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:6px 12px 6px 14px;min-height:42px;text-align:left}
+.lvpill:hover{border-color:var(--mute)}
+.lvtxt{white-space:nowrap;font-size:14px;color:var(--mute)}.lvtxt strong{color:var(--ink);font-size:15px}
+.lvname{color:var(--ink);font-weight:700}.lvname::before{content:" · ";color:var(--mute)}
+.bar{width:90px;height:6px;border-radius:9px;background:var(--line);overflow:hidden;flex:none}
+.bar i{display:block;height:100%;width:0;background:var(--okd);transition:width .3s}
+.lvpill .chev{color:var(--mute);font-size:12px}
+.lvinfo{display:none}
+.stats{display:flex;gap:16px;margin-left:auto}
+.stat{display:flex;flex-direction:column;align-items:center;line-height:1.05}
+.stat b{font-size:18px;font-variant-numeric:tabular-nums}.stat span{font-size:11px;color:var(--mute)}
+.tb{display:flex;gap:4px}
+.ibtn{display:flex;align-items:center;gap:6px;border:0;background:transparent;border-radius:10px;padding:8px 10px;min-height:42px;font-weight:700;font-size:14px;color:var(--ink)}
+.ibtn:hover{background:var(--soft)}
+.ibtn svg{width:20px;height:20px;flex:none}
+
+/* ---------- Área de jogo ---------- */
+.wrap{max-width:1240px;margin:0 auto;padding:clamp(14px,3vw,28px) max(3vw,14px) 40px;display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:24px;align-items:start}
 .wrap.nolegend{grid-template-columns:minmax(0,1fr)}.wrap.nolegend .legend{display:none}
-.lvl{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px;font-size:14px;color:var(--mute)}
-.lvl strong{color:var(--ink)}
-.bar{flex:1 1 140px;height:8px;border-radius:9px;background:var(--line);overflow:hidden;max-width:260px}
-.bar i{display:block;height:100%;background:var(--ok);transition:width .3s}
-.paper{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:clamp(18px,3vw,34px);box-shadow:0 10px 30px -18px #0004}
-.sent{display:flex;flex-wrap:wrap;align-items:flex-start;gap:14px 9px;min-height:120px;font:500 clamp(24px,4.2vw,38px)/1.2 Literata,serif}
-.w{display:inline-flex;flex-direction:column;align-items:center;gap:3px}
-.w .t{padding:2px 6px;border-radius:9px;border:2px solid transparent;transition:background .25s,color .25s,transform .2s}
+.paper{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:clamp(18px,3.2vw,36px);box-shadow:var(--shadow);max-width:900px;width:100%;margin:0 auto}
+
+/* Instrução: o que fazer agora */
+.q{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin:0 0 18px;min-height:56px}
+.q .eyebrow{flex-basis:100%;font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--mute)}
+.q .qt{font:700 clamp(19px,2.4vw,23px)/1.25 Nunito,sans-serif;margin:0}
+.q .qt b{color:light-dark(hsl(272 50% 45%),hsl(272 75% 78%))}
+.q .mode{font-size:12px;font-weight:800;padding:2px 9px;border-radius:20px;background:var(--soft);color:var(--mute)}
+.mode.wr{background:#dbeafe;color:#1e3a8a}.mode.rev{background:#fde68a;color:#78350f}.mode.hunt{background:#fce7f3;color:#831843}
+.crumbs{flex-basis:100%;font-size:15px;color:var(--mute)}.crumb{font-weight:800;color:var(--ink)}
+.steps{display:flex;gap:6px;flex-basis:100%}
+.steps i{height:4px;flex:0 0 28px;border-radius:9px;background:var(--line)}.steps i.on{background:var(--ink)}
+
+/* A frase */
+.sent{display:flex;flex-wrap:wrap;align-items:flex-start;gap:12px 8px;min-height:96px;padding:6px 0 8px;font:500 clamp(25px,4vw,38px)/1.2 Literata,serif}
+.w{position:relative;display:inline-flex;flex-direction:column;align-items:center;gap:3px}
+.w .t{padding:2px 6px;border-radius:10px;border:2px solid transparent;transition:background .25s,color .25s,transform .2s}
 .w .lab{font:700 11px/1.1 Nunito,sans-serif;color:var(--mute);min-height:12px;max-width:130px;text-align:center}
-.w.gap .t{padding:2px 10px;min-width:2.6em;text-align:center}
-.w.gap.pend .t{border:2px dashed var(--mute);color:var(--mute)}
+.w.gap .t{padding:2px 12px;min-width:2.6em;text-align:center}
+.w.gap.pend .t{border:2px dashed var(--mute);color:var(--mute);background:var(--soft)}
 .w.cur .t{border-color:var(--ink);border-style:dashed;animation:pulse 1.1s ease-in-out infinite}
 .w.skip .t{opacity:.55}
 .w.wrong .t{box-shadow:0 0 0 3px var(--bad)}
 .w.rg .t{box-shadow:inset 0 -5px 0 var(--rgc)}
 .w.rg .lab{color:var(--ink)}
 .w.badpick .t{box-shadow:0 0 0 3px var(--bad)}
-.p{font:500 clamp(24px,4.2vw,38px)/1.2 Literata,serif;margin-left:-9px;padding-top:2px}
+.w.mk{cursor:pointer}.w.mk .t{border:2px solid transparent;background:var(--soft)}.w.mk:hover .t{border-color:var(--mute)}
+.w.mk .lab{font-size:12px;color:var(--mute)}
+.w.mk.sel .t{background:color-mix(in srgb,var(--bad) 14%,var(--card));border-color:var(--bad)}
+.p{font:500 clamp(25px,4vw,38px)/1.2 Literata,serif;margin-left:-8px;padding-top:2px}
+.badge{position:absolute;top:-11px;right:-9px;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font:800 14px/1 Nunito,sans-serif;color:#fff;box-shadow:0 0 0 2px var(--card);z-index:1}
+.badge.ok{background:var(--okd)}.badge.bad{background:var(--bad)}
+.was{display:inline-block;background:var(--card);color:var(--bad);border-radius:6px;padding:0 5px;margin-right:6px;font-size:.8em;text-decoration:line-through 3px}
 @keyframes pulse{50%{transform:translateY(-2px)}}
-@media (prefers-reduced-motion:reduce){.w.cur .t{animation:none}.w .t{transition:none}}
-.q{margin:22px 0 12px;font-size:18px;display:flex;flex-wrap:wrap;gap:6px 12px;align-items:baseline}
-.q b{font:700 22px Literata,serif}
-.q .mode{font-size:12px;font-weight:800;padding:2px 8px;border-radius:20px;background:var(--line);color:var(--mute)}
-.opts{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px}
-.opts.forms{grid-template-columns:repeat(auto-fill,minmax(120px,1fr))}
-.opts.forms .o{font:700 22px Literata,serif;justify-content:flex-start}
-.o{display:flex;align-items:center;gap:10px;text-align:left;border:2px solid var(--line);background:var(--card);border-radius:12px;padding:9px 12px;min-height:48px;font-weight:700;font-size:15px;transition:transform .08s}
+@media (prefers-reduced-motion:reduce){.w.cur .t{animation:none}.w .t,.bar i{transition:none}}
+
+/* Opções */
+.opts{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-top:18px}
+.opts:empty{display:none}
+.opts.forms{grid-template-columns:repeat(auto-fill,minmax(112px,1fr))}
+.opts.forms .o{font:700 24px Literata,serif;justify-content:flex-start;min-height:60px}
+.o{display:flex;align-items:center;gap:10px;text-align:left;border:2px solid var(--line);background:var(--card);border-radius:14px;padding:10px 14px;min-height:54px;font-weight:700;font-size:15px;transition:transform .08s,border-color .15s}
 .o:hover:not(:disabled){border-color:var(--sw);transform:translateY(-1px)}
 .o .k{flex:none;width:22px;height:22px;border-radius:6px;display:grid;place-items:center;font:800 12px Nunito,sans-serif;background:var(--sw);color:var(--swt)}
 .o:disabled{opacity:.3;cursor:default}
@@ -63,110 +98,180 @@ button:focus-visible,select:focus-visible{outline:3px solid #3b82f6;outline-offs
 .o.right.mine{background:var(--okd);color:#fff}.o.right.mine::after{color:#fff}
 .o.picked{border:3px solid var(--bad);background:var(--bad);color:#fff;opacity:1}
 .o.picked::after{content:'✗';margin-left:auto;font:800 20px Nunito,sans-serif;color:#fff}
-.verdict{flex-basis:100%;display:flex;align-items:center;gap:10px;font:800 21px/1.2 Nunito,sans-serif;padding:9px 14px;border-radius:10px;color:#fff}
+.o.ghost{background:var(--soft);border-color:transparent;color:var(--ink);grid-column:span 2;max-width:340px}
+.wform{display:flex;flex-wrap:wrap;gap:10px;grid-column:1/-1}
+.wform input{flex:1 1 280px;font:600 17px Nunito,sans-serif;min-height:54px;padding:10px 16px;border:2px solid var(--line);border-radius:14px;background:var(--card);color:var(--ink)}
+.wform input:focus{outline:none;border-color:var(--focus)}
+.wform .go{margin-left:0}
+
+/* Resultado (feedback) */
+.fb{margin-top:18px}
+.fb:empty{display:none}
+.fb .box{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center}
+.fb .box.good,.fb .box.bad{border-top:1px solid var(--line);padding-top:16px}
+.fb .box.hint{background:var(--soft);border-radius:12px;padding:10px 14px;font-size:14.5px;color:var(--mute)}
+.fb .box.hint b{color:var(--ink)}
+.fb .ex{flex:1 1 320px;font-size:16px}
+.fb .ex small{color:var(--mute)}
+.fb .box.good .ex,.fb .box.bad .ex{flex:1 1 100%}
+.fb .box.good .ex:empty{display:none}
+.verdict{flex-basis:100%;display:flex;flex-wrap:wrap;align-items:center;gap:10px;font:800 21px/1.2 Nunito,sans-serif;padding:10px 16px;border-radius:12px;color:#fff}
 .verdict.ok{background:var(--okd)}.verdict.bad{background:var(--bad)}
-.verdict .vi{font-size:26px;line-height:1}.verdict .vd{font-weight:700;font-size:17px}.verdict .vp{margin-left:auto;font-size:17px}
+.verdict .vi{font-size:26px;line-height:1}.verdict .vd{font-weight:700;font-size:17px}.verdict .vp{margin-left:auto;font-size:16px;opacity:.95}
 .verdict s{text-decoration-thickness:3px}
-.w{position:relative}
-.badge{position:absolute;top:-11px;right:-9px;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font:800 14px/1 Nunito,sans-serif;color:#fff;box-shadow:0 0 0 2px var(--card);z-index:1}
-.badge.ok{background:var(--okd)}.badge.bad{background:var(--bad)}
-.was{display:inline-block;background:var(--card);color:var(--bad);border-radius:6px;padding:0 5px;margin-right:6px;font-size:.8em;text-decoration:line-through 3px}
-.fb{min-height:58px;margin-top:14px;font-size:16px}
-.fb .box{border-radius:12px;padding:12px 14px;display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center}
-.fb .box.bad{background:color-mix(in srgb,var(--bad) 10%,var(--card));border:1px solid color-mix(in srgb,var(--bad) 40%,transparent)}
-.fb .box.good{background:color-mix(in srgb,var(--ok) 10%,var(--card));border:1px solid color-mix(in srgb,var(--ok) 35%,transparent)}
-.fb .box.hint{background:var(--bg);border:1px dashed var(--line)}
-.fb .ex{flex:1 1 300px}
-.chip{display:inline-block;padding:1px 8px;border-radius:7px;font-weight:800;font-size:14px}
+.chip{display:inline-block;padding:2px 9px;border-radius:8px;font-weight:800;font-size:14px}
+.btn{border:1px solid var(--line);background:var(--card);border-radius:12px;padding:8px 14px;min-height:42px;font-weight:700;font-size:14px}
+.btn:hover{border-color:var(--mute)}
+.btn:disabled{opacity:.45;cursor:default}
 .go{margin-left:auto}
-.go.btn{background:var(--ink);color:var(--card);border-color:var(--ink)}
-.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;align-items:center;font-size:13px;color:var(--mute)}
-kbd{font:700 12px Nunito;border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:0 5px;background:var(--card)}
-.legend{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;align-self:start;position:sticky;top:12px;font-size:14px}
-.legend h2{font:700 16px Literata,serif;margin:0 0 10px}
-.legend details{border-top:1px solid var(--line);padding:6px 0}
-.legend summary{display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:800;list-style:none}
+.go.btn{background:var(--ink);color:var(--card);border-color:var(--ink);min-height:50px;padding:0 24px;font-size:16px;border-radius:14px}
+.go.btn:hover{filter:brightness(1.15)}
+
+/* Ferramentas secundárias */
+.tools{display:flex;gap:6px;margin-top:20px;padding-top:12px;border-top:1px dashed var(--line)}
+.link{border:0;background:transparent;color:var(--mute);font-weight:700;font-size:14px;padding:8px 10px;border-radius:10px;min-height:40px;display:inline-flex;align-items:center;gap:6px}
+.link:hover:not(:disabled){background:var(--soft);color:var(--ink)}
+.link:disabled{opacity:.4;cursor:default}
+.tools .link:last-child{margin-left:auto}
+
+/* ---------- Painel de regras ---------- */
+.legend{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px;position:sticky;top:76px;font-size:14px;max-height:calc(100vh - 92px);overflow:auto}
+.lhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.legend h2{font:700 17px Literata,serif;margin:0}
+.xbtn{border:0;background:transparent;width:36px;height:36px;border-radius:10px;font-size:22px;line-height:1;color:var(--mute)}
+.xbtn:hover{background:var(--soft);color:var(--ink)}
+.method{background:var(--soft);border-radius:12px;padding:10px 12px;margin:0 0 10px;font-size:13.5px}
+.method ol{margin:4px 0 6px;padding-left:20px}.method p{margin:0;color:var(--mute);font-size:12.5px}
+.legend details{border-top:1px solid var(--line);padding:8px 0}
+.legend summary{display:grid;grid-template-columns:16px 1fr auto;column-gap:8px;align-items:center;cursor:pointer;list-style:none;font-weight:800}
 .legend summary::-webkit-details-marker{display:none}
+.legend summary::after{content:'▸';grid-column:3;grid-row:1;color:var(--mute);font-size:12px;transition:transform .15s}
+.legend details[open] summary::after{transform:rotate(90deg)}
+.legend summary .tip{grid-column:2/4;font-weight:500;font-size:12.5px;color:var(--mute);line-height:1.35;margin-top:2px}
 .dot{width:14px;height:14px;border-radius:4px;flex:none}
-.legend ul{list-style:none;margin:6px 0 2px 22px;padding:0;display:grid;gap:3px}
-.legend li{display:flex;gap:7px;align-items:center;font-size:13px}
-.legend .tip{font-size:12.5px;color:var(--mute);margin:4px 0 2px 22px}
-.legend .method{font-size:12.5px;color:var(--mute);margin:10px 0 0;border-top:1px solid var(--line);padding-top:8px}
-.toast{position:fixed;left:50%;top:18px;transform:translate(-50%,-140%);opacity:0;background:var(--ink);color:var(--card);padding:12px 18px;border-radius:12px;font-weight:800;transition:transform .35s;z-index:9;max-width:92vw;text-align:center}
+.legend ul{list-style:none;margin:8px 0 2px 24px;padding:0;display:grid;gap:4px}
+.legend ul li{display:flex;gap:8px;align-items:center;font-size:13px}
+.legend .ok-note{font-size:12.5px;color:var(--mute);border-top:1px solid var(--line);padding-top:8px;margin:4px 0 0}
+
+/* ---------- Folhas (ajustes, progresso, boas-vindas) ---------- */
+.toast{position:fixed;left:50%;top:14px;transform:translate(-50%,-160%);opacity:0;background:var(--ink);color:var(--card);padding:12px 18px;border-radius:12px;font-weight:800;transition:transform .35s,opacity .35s;z-index:20;max-width:92vw;text-align:center}
 .toast.on{transform:translate(-50%,0);opacity:1}
-.modal{position:fixed;inset:0;background:#0007;display:none;place-items:center;z-index:8;padding:14px}
-.modal.on{display:grid}
-.mbox{background:var(--card);border-radius:18px;padding:22px;width:min(680px,100%);max-height:90vh;overflow:auto}
-.mbox h2{font:700 24px Literata,serif;margin:0 0 12px}
+.modal,.sheet{position:fixed;inset:0;background:#0008;display:none;place-items:center;z-index:10;padding:14px}
+.modal.on,.sheet.on{display:grid}
+.mbox{background:var(--card);border-radius:20px;padding:22px 24px;width:min(720px,100%);max-height:90vh;overflow:auto;box-shadow:0 24px 60px -20px #0006}
+.mbox h2{font:700 24px Literata,serif;margin:0}
+.mbox h3{font:800 15px Nunito,sans-serif;margin:22px 0 8px;padding-top:14px;border-top:1px solid var(--line)}
+.mhead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}
+.tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:6px}
+.tile{background:var(--soft);border-radius:12px;padding:10px 12px}.tile b{display:block;font-size:22px;font-variant-numeric:tabular-nums}.tile span{font-size:12px;color:var(--mute)}
 .srow{display:grid;grid-template-columns:minmax(110px,230px) minmax(0,1fr) 90px;gap:10px;align-items:center;padding:4px 0;font-size:14px}
 .srow .num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
 .srow span:first-child{overflow-wrap:anywhere}
 .sbar{height:10px;border-radius:9px;background:var(--line);overflow:hidden}.sbar i{display:block;height:100%}
 .miss{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
 select{font:inherit;font-weight:700;border:1px solid var(--line);background:var(--card);border-radius:10px;padding:6px 8px;min-height:40px}
-.done{font:700 14px Nunito;color:var(--mute)}
-.sent,.opts,.fb .go{-webkit-user-select:none;user-select:none;touch-action:manipulation}
-.mode.wr{background:#dbeafe;color:#1e3a8a}
-.mode.rev{background:#fde68a;color:#78350f}
-.mode.hunt{background:#fce7f3;color:#831843}
-.wform{display:flex;flex-wrap:wrap;gap:8px;grid-column:1/-1}
-.wform input{flex:1 1 280px;font:600 17px Nunito,sans-serif;min-height:50px;padding:10px 14px;border:2px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink)}
-.wform input:focus{outline:none;border-color:#3b82f6}
-.wform .go{margin-left:0;min-height:50px}
-.crumbs{flex-basis:100%;font-size:15px;color:var(--mute)}.crumb{font-weight:800;color:var(--ink)}
-.w.mk{cursor:pointer}.w.mk .t{border:2px dashed var(--line)}.w.mk:hover .t{border-color:var(--mute)}
-.w.mk.sel .t{background:color-mix(in srgb,var(--bad) 16%,var(--card));border:2px solid var(--bad)}
-.w.mk .lab{font-size:12px;color:var(--mute)}
+.done{font:700 14px Nunito,sans-serif;color:var(--mute)}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;align-items:center;font-size:13px;color:var(--mute)}
 .hwrap{max-height:340px;overflow:auto;border:1px solid var(--line);border-radius:12px;margin-top:8px}
 .htab{width:100%;border-collapse:collapse;font-size:14px}.htab th{position:sticky;top:0;background:var(--card);text-align:left;padding:8px;font-size:12px;color:var(--mute)}
 .htab td{padding:7px 8px;border-top:1px solid var(--line);vertical-align:top}.htab td:first-child{white-space:nowrap;color:var(--mute);font-size:12.5px}
-.htab .hs{font-size:12px;color:var(--mute)}.hok td:last-child{color:var(--ok);font-weight:800}.herr td:last-child{color:var(--bad);font-weight:800}
+.htab .hs{font-size:12px;color:var(--mute)}.hok td:last-child{color:var(--okd);font-weight:800}.herr td:last-child{color:var(--bad);font-weight:800}
 .htxt{width:100%;height:120px;margin-top:8px;font:12px monospace}
-@media(max-width:600px){.htab{font-size:13px}.stack thead{display:none}.stack tr{display:grid;padding-block:8px}.stack td{display:flow-root;border:0;padding:2px 8px;padding-inline-start:8.5em}.stack td::before{content:attr(data-l);float:inline-start;width:8em;margin-inline-start:-8em;font-size:12px;color:var(--mute)}.stack td:empty{display:none}}
-@media(max-width:900px){.wrap{grid-template-columns:minmax(0,1fr)}.legend{position:static}}
-@media(max-width:600px){.stat span{font-size:11px}.stat b{font-size:16px}.top h1{flex-basis:100%}.opts{grid-template-columns:repeat(2,minmax(0,1fr))}.o{font-size:14px;padding:8px}.sent{gap:10px 6px}.p{margin-left:-6px}}
+/* Ajustes: lista de níveis e ordem */
+.lvgroup{margin:14px 0 4px;font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--mute)}
+.lvlist{display:grid;gap:6px}
+.lvopt{display:grid;grid-template-columns:34px 1fr auto;gap:2px 12px;align-items:center;text-align:left;border:2px solid var(--line);background:var(--card);border-radius:14px;padding:9px 12px}
+.lvopt:hover{border-color:var(--mute)}
+.lvopt .n{grid-row:1/3;width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:var(--soft);font-weight:800}
+.lvopt b{font-size:15px}.lvopt small{grid-column:2;color:var(--mute);font-size:13px;line-height:1.3}
+.lvopt.on{border-color:var(--ink)}.lvopt.on .n{background:var(--ink);color:var(--card)}
+.lvopt .cur{grid-row:1/3;grid-column:3;font-size:12px;font-weight:800;color:var(--mute)}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.segopt{text-align:left;border:2px solid var(--line);background:var(--card);border-radius:14px;padding:10px 12px}
+.segopt b{display:block;font-size:15px}.segopt small{color:var(--mute);font-size:13px;line-height:1.3;display:block}
+.segopt.on{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.keys{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:14px;align-items:center}
+.howto{display:grid;gap:12px;margin:6px 0 4px;padding:0;list-style:none;counter-reset:s}
+.howto li{display:grid;grid-template-columns:32px 1fr;gap:10px;align-items:start;counter-increment:s}
+.howto li::before{content:counter(s);width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:var(--ink);color:var(--card);font-weight:800}
+.swatches{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+
+.sent,.opts,.fb .go{-webkit-user-select:none;user-select:none;touch-action:manipulation}
+
+/* ---------- Telas menores ---------- */
+@media(max-width:1099px){
+  .wrap{grid-template-columns:minmax(0,1fr)}
+  /* regras viram gaveta: escondidas até tocar em "Regras" */
+  .legend{display:none;position:fixed;z-index:12;inset:auto 0 0 0;top:auto;max-height:82vh;border-radius:20px 20px 0 0;box-shadow:0 -20px 50px -20px #0007;padding:18px 18px 28px}
+  .wrap.showleg .legend{display:block}
+  .wrap.showleg::before{content:"";position:fixed;inset:0;background:#0008;z-index:11}
+}
+@media(max-width:860px){ .lvname,.stat.opt{display:none} }
+@media(max-width:640px){
+  .top{flex-wrap:wrap;padding:8px 12px;gap:8px}
+  .brand h1{font-size:18px}.logo{width:30px;height:30px;font-size:19px}
+  .stats{gap:12px}
+  .tb{margin-left:auto}.ibtn{padding:8px}.ibtn .lbl{display:none}
+  .lvpill{order:5;flex-basis:100%;justify-content:space-between;border-radius:12px;min-height:38px}
+  .lvname{display:inline}.lvpill .bar{flex:1 1 auto;max-width:120px}
+  .paper{border-radius:18px;padding:18px 16px}
+  .sent{gap:10px 6px;min-height:0}.p{margin-left:-6px}.o.ghost{max-width:none}
+  .opts{grid-template-columns:repeat(2,minmax(0,1fr))}.o{font-size:14px;padding:8px 10px}
+  .fb .go,.wform .go{flex-basis:100%;margin-left:0}
+  .verdict{font-size:19px;row-gap:2px}.verdict .vp,.verdict .vd{flex-basis:100%;margin-left:36px}
+  .tiles{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .mbox{padding:18px}
+  .htab{font-size:13px}.stack thead{display:none}.stack tr{display:grid;padding-block:8px}.stack td{display:flow-root;border:0;padding:2px 8px;padding-inline-start:8.5em}.stack td::before{content:attr(data-l);float:inline-start;width:8em;margin-inline-start:-8em;font-size:12px;color:var(--mute)}.stack td:empty{display:none}
+  .sheet,.modal{padding:0;place-items:end stretch}.sheet .mbox,.modal .mbox{border-radius:20px 20px 0 0;max-height:92vh;width:100%}
+  .seg{grid-template-columns:1fr}
+}
 </style>
 <script>new MutationObserver(()=>{for(const c of document.querySelectorAll('.stack td:not([data-l])')){let i=0,p=c;while(p=p.previousElementSibling)i+=p.colSpan;c.dataset.l=c.closest('table').rows[0].cells[i]?.textContent||''}}).observe(document,{childList:true,subtree:true})</script>
 </head>
 <body>
 <header class="top">
-  <h1>Crase</h1>
-  <div class="stat"><b id="sScore">0</b><span>pontos</span></div>
-  <div class="stat"><b id="sStreak">0</b><span>sequência</span></div>
-  <div class="stat"><b id="sAcc">–</b><span>precisão</span></div>
-  <div class="stat"><b id="sSent">0</b><span>frases</span></div>
-  <div class="tb">
-    <button class="btn" id="bLeg" title="Legenda (L)">Legenda</button>
-    <button class="btn" id="bStats">Estatísticas</button>
+  <div class="brand"><span class="logo" aria-hidden="true">à</span><h1>Crase</h1></div>
+  <button class="lvpill" id="bLevel" aria-label="Trocar de nível e ajustes">
+    <span class="lvtxt">Nível <strong id="lvNum">1</strong><span class="lvname" id="lvName"></span></span>
+    <span class="bar" title="Acertos nas últimas 20 respostas: o nível sobe com 85%"><i id="lvBar"></i></span>
+    <span class="lvinfo" id="lvInfo"></span>
+    <span class="chev" aria-hidden="true">▾</span>
+  </button>
+  <div class="stats">
+    <div class="stat"><b id="sScore">0</b><span>pontos</span></div>
+    <div class="stat"><b id="sStreak">0</b><span>seguidas</span></div>
+    <div class="stat opt"><b id="sAcc">–</b><span>acertos</span></div>
+    <div class="stat opt"><b id="sSent">0</b><span>frases</span></div>
   </div>
+  <nav class="tb" aria-label="Menu">
+    <button class="ibtn" id="bLeg" title="Regras e cores (L)" aria-label="Regras e cores"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5"/></svg><span class="lbl">Regras</span></button>
+    <button class="ibtn" id="bStats" title="Seu progresso" aria-label="Seu progresso"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span class="lbl">Progresso</span></button>
+    <button class="ibtn" id="bSet" title="Nível e ajustes" aria-label="Nível e ajustes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg><span class="lbl">Ajustes</span></button>
+  </nav>
 </header>
 
 <main class="wrap" id="wrap">
   <section>
-    <div class="lvl">
-      <span>Nível <strong id="lvNum">1</strong> · <span id="lvName"></span></span>
-      <div class="bar" title="Acertos nas últimas 20 respostas deste nível"><i id="lvBar" style="width:0"></i></div>
-      <span id="lvInfo"></span>
-      <select id="lvSel" aria-label="Escolher nível"></select>
-      <select id="ordSel" aria-label="Ordem"><option value="regente">Ordem: primeiro quem exige o “a” (recomendada)</option><option value="direto">Ordem: direto à lacuna</option></select>
-    </div>
-    <div class="paper">
-      <div class="sent" id="sent" aria-live="polite"></div>
-      <div class="q" id="q"></div>
+    <article class="paper" aria-label="Exercício">
+      <div class="q" id="q" aria-live="polite"></div>
+      <div class="sent" id="sent"></div>
       <div class="opts" id="opts"></div>
-      <div class="fb" id="fb"></div>
-      <div class="row">
-        <button class="btn" id="bHint">Dica (H)</button>
-        <button class="btn" id="bSkip">Pular frase</button>
-        <span>Teclas <kbd>1</kbd>–<kbd>9</kbd> <kbd>0</kbd> para responder ou marcar · <kbd>Enter</kbd> ou <kbd>Espaço</kbd> para continuar</span>
+      <div class="fb" id="fb" aria-live="polite"></div>
+      <div class="tools">
+        <button class="link" id="bHint">💡 Dica <kbd>H</kbd></button>
+        <button class="link" id="bSkip">Pular frase →</button>
       </div>
-    </div>
+    </article>
   </section>
-  <aside class="legend" id="legend"><h2>Legenda de cores</h2><div id="legBody"></div></aside>
+  <aside class="legend" id="legend" aria-label="Regras e cores">
+    <div class="lhead"><h2>Regras e cores</h2><button class="xbtn" id="bLegX" aria-label="Fechar regras">×</button></div>
+    <div id="legBody"></div>
+  </aside>
 </main>
 
-<div class="toast" id="toast"></div>
+<div class="toast" id="toast" role="status"></div>
 <div class="modal" id="modal"><div class="mbox" id="mbox"></div></div>
+<div class="sheet" id="set"><div class="mbox" id="setBox" role="dialog" aria-modal="true" aria-labelledby="setTitle"></div></div>
 
 <script>
 {
@@ -831,11 +936,11 @@ function askReg(){
   const ws=cur.toks.map((x,i)=>x.w?i:-1).filter(i=>i>=0).sort((a,b)=>Math.abs(a-g.ti)-Math.abs(b-g.ti)||a-b).slice(0,9).sort((a,b)=>a-b);
   numOf={}; byNum={}; ws.forEach((ti,k)=>{numOf[ti]=k+1; byNum[k+1]=ti;});
   renderSentence();
-  $('q').innerHTML=`<span><b>Passo 1:</b> toque na palavra que <b>exige a preposição “a”</b> nesta lacuna</span><span class="mode">verbo, nome ou “até”</span>${modeTags(g)}`;
+  $('q').innerHTML=`<div class="eyebrow">Passo 1 de 2 · quem exige o “a”?</div><h2 class="qt">Toque na palavra que <b>exige a preposição “a”</b></h2>${modeTags(g)}`;
   $('opts').className='opts';
-  $('opts').innerHTML=`<button class="o" id="bNone" style="--sw:var(--line);--swt:var(--ink)"><span class="k">0</span>Nenhuma palavra exige</button>`;
+  $('opts').innerHTML=`<button class="o ghost" id="bNone" style="--sw:var(--mute);--swt:var(--card)"><span class="k">0</span>Nenhuma palavra exige</button>`;
   $('bNone').onclick=()=>answerReg(-1);
-  $('fb').innerHTML=`<div class="box hint"><span class="ex">Crase = preposição “a” + artigo “a”. Primeiro ache quem pede a preposição (quem vai, vai <b>a</b>; quem se refere, refere-se <b>a</b>). Se for locução, hora, tempo, ou se ninguém pedir o “a”, escolha <b>Nenhuma</b> (<kbd>0</kbd>). As teclas <kbd>1</kbd>–<kbd>9</kbd> tocam nas palavras numeradas.</span></div>`;
+  $('fb').innerHTML=`<div class="box hint"><span>Pense: quem vai, vai <b>a</b>; quem se refere, refere-se <b>a</b>. Se for locução, hora ou um “a” que é só artigo, toque em <b>Nenhuma</b>.</span></div>`;
   $('bHint').disabled=false;
 }
 function answerReg(ti){
@@ -875,8 +980,8 @@ function askForm(){
   const g=G(), lv=S.level; phase='q'; waiting=false; hintUsed=false;
   renderSentence();
   const opts=fam(g,lv);
-  const step=S.order==='regente'?'<span class="mode">passo 2: a lacuna</span>':'';
-  $('q').innerHTML=`<span>Qual forma completa a lacuna?</span>${step}${modeTags(g)}`;
+  const step=S.order==='regente'?'Passo 2 de 2 · a lacuna':'Complete a lacuna';
+  $('q').innerHTML=`<div class="eyebrow">${step}</div><h2 class="qt">Qual forma completa a lacuna?</h2>${modeTags(g)}`;
   $('opts').className='opts forms';
   $('opts').innerHTML=opts.map((o,i)=>{const c=formColor(o);
     return `<button class="o" data-o="${o}" style="--sw:${c.bg};--swt:${c.fg}"><span class="k">${(i+1)%10}</span>${dispForm(g,o)}</button>`;}).join('');
@@ -913,7 +1018,7 @@ function askTree(){
   let opts=tstep===0?DORDER.slice():RBY[d].slice();
   if(lv===10||lv===12) shuffle(opts);
   const crumb=tstep?`<span class="crumbs"><span class="crumb">${DEC[d].n}</span> › <b>?</b></span>`:'';
-  $('q').innerHTML=`<span>${tstep===0?'A crase nesta lacuna é…':'Qual regra?'}</span><span class="mode">árvore · etapa ${tstep+1}</span>${modeTags(g)}${crumb}`;
+  $('q').innerHTML=`<div class="eyebrow">Árvore · etapa ${tstep+1} de 2</div><h2 class="qt">${tstep===0?'Nesta lacuna, a crase é…':'Por qual regra?'}</h2>${modeTags(g)}${crumb}`;
   $('opts').className='opts';
   $('opts').innerHTML=opts.map((o,i)=>{
     const c=lv>=9?NEUTRAL:color(o,tstep>0);
@@ -969,11 +1074,11 @@ function askWrite(){
   const g=G(), lv=S.level;
   phase='q'; waiting=false; hintUsed=false; wmode=true;
   renderSentence();
-  $('q').innerHTML=`<span>Escreva a <b>regra</b> que decide esta lacuna</span><span class="mode wr">✍ escrita</span>${modeTags(g)}`;
+  $('q').innerHTML=`<div class="eyebrow">✍ Escrita · você já domina esta regra</div><h2 class="qt">Escreva a <b>regra</b> que decide esta lacuna</h2>${modeTags(g)}`;
   $('opts').className='opts';
   $('opts').innerHTML=`<form id="wForm" class="wform" autocomplete="off"><input id="wIn" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Regra por extenso" placeholder="Ex.: antes de palavra masculina"><button class="btn go" type="submit">Responder ⏎</button></form>`;
   $('wForm').onsubmit=e=>{e.preventDefault();answerWrite($('wIn').value);};
-  if(!keepFb) $('fb').innerHTML=`<div class="box hint"><span class="ex">Você já domina esta regra, então agora é por extenso: escreva a justificativa (ex.: <i>preposição + artigo feminino</i>, <i>lugar sem artigo</i>, <i>tempo passado</i>). Acentos, maiúsculas e a ordem das palavras não importam.</span></div>`; keepFb=false;
+  if(!keepFb) $('fb').innerHTML=`<div class="box hint"><span>Exemplos: <i>preposição + artigo feminino</i>, <i>lugar sem artigo</i>, <i>tempo passado</i>. Acentos, maiúsculas e a ordem das palavras não importam.</span></div>`; keepFb=false;
   $('bHint').disabled=lv===12;
   setTimeout(()=>$('wIn')&&$('wIn').focus({preventScroll:true}),30);
 }
@@ -1014,11 +1119,11 @@ function startHunt(){
   let n=0;
   cur.toks.forEach((x,i)=>{ const isG=x.gap!==undefined; if(isG||(x.w&&AWORD.test(x.w))){ const it={ti:i,gi:isG?x.gap:undefined,n:++n}; hunt.items.push(it); hunt.byTi[i]=it; } });
   renderSentence();
-  $('q').innerHTML=`<span><b>Caça ao acento:</b> toque em cada palavra com acento grave <b>faltando</b> ou <b>sobrando</b></span><span class="mode hunt">bônus</span>`;
+  $('q').innerHTML=`<div class="eyebrow">Bônus · caça ao acento</div><h2 class="qt">Toque nas palavras com acento grave <b>faltando</b> ou <b>sobrando</b></h2>`;
   $('opts').className='opts';
-  $('opts').innerHTML=`<button class="o" id="bHunt" style="--sw:var(--ink);--swt:var(--card)"><span class="k">⏎</span>Confirmar</button>`;
+  $('opts').innerHTML=`<button class="o" id="bHunt" style="--sw:var(--ink);--swt:var(--card)"><span class="k">⏎</span>Confirmar marcação</button>`;
   $('bHunt').onclick=confirmHunt;
-  $('fb').innerHTML=`<div class="box hint"><span class="ex">A frase pode estar toda certa: nesse caso, só confirme. Teclas <kbd>1</kbd>–<kbd>0</kbd> marcam as palavras pelo número; <kbd>Enter</kbd> confirma.</span></div>`;
+  $('fb').innerHTML=`<div class="box hint"><span>A frase pode estar toda certa: nesse caso, é só confirmar.</span></div>`;
   $('bHint').disabled=true;
 }
 function toggleHunt(i){ if(phase!=='hunt'||!hunt.byTi[i]) return; hunt.marks.has(i)?hunt.marks.delete(i):hunt.marks.add(i); renderSentence(); }
@@ -1086,7 +1191,7 @@ function endSentence(){
   phase='end'; S.sents++; save(); updateHUD();
   const seen=[]; cur.gaps.forEach(g=>{ g.rev=true; g.regShown=true; if(!seen.includes(g.r)) seen.push(g.r); });
   renderSentence();
-  $('q').innerHTML=`<span class="done">Frase completa! Revise as cores…</span>`;
+  $('q').innerHTML=`<div class="eyebrow">Frase completa</div><h2 class="qt">Revise as cores</h2>`;
   $('opts').innerHTML='';
   const miss=cur.gaps.filter(g=>g.miss).length;
   $('fb').innerHTML=`<div class="box hint">${seen.map(r=>chip(r)).join(' ')}<span class="ex">${miss?`${miss} erro(s) nesta frase.`:'Sem erros!'}</span><button class="btn go" id="bGo">Próxima ⏎</button></div>`;
@@ -1133,16 +1238,50 @@ function updateHUD(){
   const w=S.win, acc=w.length?w.reduce((a,b)=>a+b,0)/w.length:0;
   $('lvBar').style.width=(w.length?Math.round(acc*100):0)+'%';
   $('lvInfo').textContent=S.level<MAXL?(w.length<20?`${w.length}/20 respostas · sobe com 85%`:`${Math.round(acc*100)}% nas últimas 20 · sobe com 85%`):'nível máximo';
-  $('lvSel').value=S.level; $('ordSel').value=S.order;
+  $('bLevel').title=`Nível ${S.level}: ${LEVELS[S.level].n} · ${$('lvInfo').textContent}`;
 }
 
 function renderLegend(){
-  $('legBody').innerHTML=DORDER.map(d=>{const col=color(d,false);
-    return `<details${d!=='ha'?' open':''}><summary><span class="dot" style="background:${col.bg}"></span>${DEC[d].n}</summary>
-      <ul>${RBY[d].map(r=>`<li><span class="dot" style="background:${color(r).bg}"></span>${RULES[r].n}</li>`).join('')}</ul>
-      <div class="tip">${DEC[d].tip}</div></details>`;}).join('')+
-    `<p class="method"><b>Método:</b> 1) ache quem exige a preposição “a” (verbo, nome, “até”); 2) veja se a palavra seguinte aceita o artigo “a”. Testes: troque por masculino (à → ao); vou a / volto da; troque “há” por “faz”.</p>`;
+  $('legBody').innerHTML=`<div class="method"><b>Como decidir</b><ol><li>Ache quem <b>exige</b> a preposição “a” (verbo, nome, “até”).</li><li>Veja se a palavra seguinte <b>aceita o artigo</b> “a”.</li></ol><p>Testes rápidos: troque por masculino (à → ao) · vou a / volto da · troque “há” por “faz”.</p></div>`+
+    DORDER.map(d=>`<details><summary><span class="dot" style="background:${color(d,false).bg}"></span>${DEC[d].n}<span class="tip">${DEC[d].tip}</span></summary>
+      <ul>${RBY[d].map(r=>`<li><span class="dot" style="background:${color(r).bg}"></span>${RULES[r].n}</li>`).join('')}</ul></details>`).join('')+
+    `<p class="ok-note"><b style="color:var(--okd)">✓ verde</b> = você acertou · <b style="color:var(--bad)">✗ vermelho</b> = você errou. As outras cores mostram a regra.</p>`;
 }
+const isWide=()=>matchMedia('(min-width:1100px)').matches;
+function toggleLegend(force){ const w=$('wrap'); if(isWide()) w.classList.toggle('nolegend',force===undefined?undefined:!force); else w.classList.toggle('showleg',force); }
+
+/* ===== Folha "Nível e ajustes" (também é a tela de boas-vindas na primeira visita) ===== */
+const LV_GROUPS=[[1,6,'Escolher a forma'],[7,10,'Árvore: decisão → regra'],[11,12,'Escrita e caça ao acento']];
+const HOWTO=`<ol class="howto"><li><div><b>Ache quem exige o “a”.</b> Toque no verbo ou no nome que pede a preposição (quem vai, vai <b>a</b>). Se ninguém pede, toque em “Nenhuma”.</div></li>
+  <li><div><b>Complete a lacuna</b> com a, à, as, às ou há. A lacuna ganha a cor da regra.</div></li>
+  <li><div><b>Veja se acertou:</b> <b style="color:var(--okd)">✓ verde</b> é certo, <b style="color:var(--bad)">✗ vermelho</b> é errado, sempre com a explicação. Depois, “Próxima”.</div></li></ol>`;
+let setIntro=false;
+function openSet(intro){
+  setIntro=!!intro;
+  const sw=DORDER.map(d=>{const c=color(d,false);return `<span class="chip" style="background:${c.bg};color:${c.fg}">${DEC[d].n}</span>`;}).join('');
+  const levels=LV_GROUPS.map(([a,b,t])=>`<div class="lvgroup">${t}</div><div class="lvlist">${LEVELS.slice(a,b+1).map((l,k)=>{const n=a+k;
+    return `<button class="lvopt${n===S.level?' on':''}" data-lv="${n}"><span class="n">${n}</span><b>${l.n}</b><small>${l.d}</small>${n===S.level?'<span class="cur">atual</span>':''}</button>`;}).join('')}</div>`).join('');
+  $('setBox').innerHTML=intro?
+   `<div class="mhead"><h2 id="setTitle">Aprenda crase em 3 passos</h2></div>${HOWTO}
+    <p class="done" style="margin:14px 0 4px">Cores das regras:</p><div class="swatches">${sw}</div>
+    <p class="done" style="font-weight:600">O nível sobe sozinho quando você acerta bastante. Pode trocar de nível a qualquer momento no topo.</p>
+    <div class="row" style="margin-top:16px"><button class="btn go" id="setGo">Começar ⏎</button></div>`:
+   `<div class="mhead"><h2 id="setTitle">Nível e ajustes</h2><button class="xbtn" id="setX" aria-label="Fechar">×</button></div>
+    <p class="done" style="font-weight:600;margin:0">${S.win.length<20?`${S.win.length} de 20 respostas neste nível`:`${Math.round(100*S.win.reduce((a,b)=>a+b,0)/S.win.length)}% de acertos nas últimas 20`}. O nível sobe sozinho com 85% de acertos nas últimas 20 respostas e desce abaixo de 50%.</p>
+    ${levels}
+    <h3>Ordem das perguntas</h3>
+    <div class="seg"><button class="segopt${S.order==='regente'?' on':''}" data-ord="regente"><b>Primeiro quem exige o “a”</b><small>Recomendada: ache o termo e depois complete a lacuna.</small></button>
+      <button class="segopt${S.order==='direto'?' on':''}" data-ord="direto"><b>Direto à lacuna</b><small>Mais rápido: só escolher a forma.</small></button></div>
+    <h3>Como jogar</h3>${HOWTO}
+    <h3>Teclado</h3><div class="keys"><span><kbd>1</kbd>–<kbd>9</kbd> <kbd>0</kbd></span><span>responder ou marcar</span><span><kbd>Enter</kbd> <kbd>Espaço</kbd></span><span>próxima</span><span><kbd>H</kbd></span><span>dica</span><span><kbd>L</kbd></span><span>regras e cores</span><span><kbd>Esc</kbd></span><span>fechar</span></div>`;
+  $('set').classList.add('on');
+  $('setBox').querySelectorAll('[data-lv]').forEach(b=>b.onclick=()=>{ closeSet(); setLevel(+b.dataset.lv); newSentence(); });
+  $('setBox').querySelectorAll('[data-ord]').forEach(b=>b.onclick=()=>{ closeSet(); S.order=b.dataset.ord; save(); newSentence(); });
+  if($('setX')) $('setX').onclick=closeSet;
+  if($('setGo')) $('setGo').onclick=closeSet;
+  setTimeout(()=>($('setGo')||$('setBox').querySelector('.lvopt.on'))?.focus({preventScroll:true}),30);
+}
+function closeSet(){ $('set').classList.remove('on'); if(setIntro){ try{localStorage.setItem('crase.intro','1');}catch(e){} setIntro=false; } }
 
 function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('on'),3200);}
 
@@ -1203,8 +1342,9 @@ function stats(){
     const [id,gi]=k.split(':').map(Number), s=byId[id]; if(!s) return ''; const g=s.gaps[gi], nx=s.toks[g.ti+1], c=color(g.r);
     return `<span class="chip" title="${esc(s.text)}" style="background:${c.bg};color:${c.fg}">${g.forms.join('/')} ${nx&&nx.w?esc(nx.w):''} · ${RULES[g.r].s}</span>`;}).join('');
   const nOk=H.e.filter(r=>r[6]).length;
-  $('mbox').innerHTML=`<h2>Estatísticas</h2>
-    <p>${S.ans} respostas · ${S.ans?Math.round(100*S.ok/S.ans):0}% de acerto · ${S.sents} frases · melhor sequência: <b>${S.best}</b></p>
+  $('mbox').innerHTML=`<div class="mhead"><h2>Seu progresso</h2><button class="xbtn" id="mX" aria-label="Fechar">×</button></div>
+    <div class="tiles"><div class="tile"><b>${S.ans}</b><span>respostas</span></div><div class="tile"><b>${S.ans?Math.round(100*S.ok/S.ans)+'%':'–'}</b><span>de acerto</span></div><div class="tile"><b>${S.sents}</b><span>frases</span></div><div class="tile"><b>${S.best}</b><span>melhor sequência</span></div></div>
+    <h3>Acertos por regra</h3>
     ${rows}
     <h3>Domínio</h3><p class="done" style="font-weight:600;margin-top:-6px">Acerte ${STG.map(g=>g.need).join(' → ')} seguidas para pular ${STG.map(g=>g.skip).join(' → ')} vezes. Um erro volta ao início. Mais de ${STALE_DAYS} dias sem responder também faz a regra voltar.</p>
     <label class="row" style="margin-top:0"><input type="checkbox" id="mSkip" ${S.skipM?'checked':''}> Pular o que já domino (as perguntas voltam para conferir)</label>
@@ -1222,18 +1362,20 @@ function stats(){
     try{await navigator.clipboard.writeText(csv);e.target.textContent='Copiado!';}
     catch(err){const t=$('hTxt');t.hidden=false;t.value=csv;t.focus();t.select();e.target.textContent='Selecionado abaixo: Ctrl+C';}};
   $('hDel').onclick=e=>{ if(e.target.dataset.c){H={e:[],t:{}};saveH();stats();} else {e.target.dataset.c=1;e.target.textContent='Clique de novo para apagar tudo';} };
-  $('mClose').onclick=()=>$('modal').classList.remove('on');
+  $('mClose').onclick=$('mX').onclick=()=>$('modal').classList.remove('on');
   $('mReset').onclick=e=>{ if(e.target.dataset.c){const o=S.order;S=fresh();S.order=o;save();$('modal').classList.remove('on');updateHUD();newSentence();} else {e.target.dataset.c=1;e.target.textContent='Clique de novo para confirmar';} };
 }
 
 /* ================= EVENTOS ================= */
-$('lvSel').innerHTML=LEVELS.slice(1).map((l,i)=>`<option value="${i+1}">Nível ${i+1}: ${l.n}</option>`).join('');
-$('lvSel').onchange=e=>{setLevel(+e.target.value);newSentence();};
-$('ordSel').onchange=e=>{S.order=e.target.value;save();newSentence();};
+$('bLevel').onclick=()=>openSet(false);
+$('bSet').onclick=()=>openSet(false);
+$('set').onclick=e=>{if(e.target.id==='set')closeSet();};
+$('bLegX').onclick=()=>toggleLegend(false);
+$('wrap').addEventListener('click',e=>{ if(e.target.id==='wrap'&&$('wrap').classList.contains('showleg')) toggleLegend(false); });
 $('bHint').onclick=hint;
 $('bSkip').onclick=()=>newSentence();
 $('bStats').onclick=stats;
-$('bLeg').onclick=()=>$('wrap').classList.toggle('nolegend');
+$('bLeg').onclick=()=>toggleLegend();
 $('modal').onclick=e=>{if(e.target.id==='modal')$('modal').classList.remove('on');};
 $('sent').addEventListener('click',e=>{const w=e.target.closest('.w[data-i]'); if(!w) return;
   if(phase==='reg') answerReg(+w.dataset.i); else if(phase==='hunt') toggleHunt(+w.dataset.i);});
@@ -1252,8 +1394,10 @@ $('sent').addEventListener('click',e=>{const w=e.target.closest('.w[data-i]'); i
   },true); }
 document.addEventListener('keydown',e=>{
   if(e.target.tagName==='SELECT'||e.target.tagName==='TEXTAREA'||e.target.tagName==='INPUT'||e.ctrlKey||e.metaKey||e.altKey) return;
+  if($('set').classList.contains('on')){ if(e.key==='Escape')closeSet(); return; }
   if($('modal').classList.contains('on')){ if(e.key==='Escape')$('modal').classList.remove('on'); return; }
-  if(e.key==='l'||e.key==='L'){ $('wrap').classList.toggle('nolegend'); return; }
+  if(e.key==='Escape'&&$('wrap').classList.contains('showleg')){ toggleLegend(false); return; }
+  if(e.key==='l'||e.key==='L'){ toggleLegend(); return; }
   if(phase==='hunt'){
     if(e.key==='Enter'){e.preventDefault();return confirmHunt();}
     if(e.key===' '&&e.target.closest&&e.target.closest('.w[data-i]')){e.preventDefault();return toggleHunt(+e.target.closest('.w[data-i]').dataset.i);}
@@ -1275,7 +1419,9 @@ document.addEventListener('keydown',e=>{
 /* para os testes automáticos */
 window.__T={SENT,RULES,DEC,ERRORS,COUNT,checkWrite,scope,fam,flip,get S(){return S;},get cur(){return cur;},get phase(){return phase;},get queue(){return queue;},get qi(){return qi;},get tstep(){return tstep;},get hunt(){return hunt;},byNum:()=>byNum};
 
+let firstVisit=false; try{ firstVisit=!localStorage.getItem('crase.intro')&&!localStorage.getItem(KEY); }catch(e){}
 renderLegend(); updateHUD(); newSentence();
+if(firstVisit) openSet(true);
 }
 </script>
 </body>

@@ -11,6 +11,7 @@ Jogo para aprender a usar a crase (a, à, as, às, há, àquele, à qual) na nor
 - 12 níveis: de "a" ou "à" até escrever a regra por extenso e caçar acentos errados
 - O que você já domina é pulado por mais tempo a cada acerto e volta de vez em quando para conferir
 - Histórico de respostas exportável em CSV
+- Tela limpa: uma tarefa por vez; nível, regras e progresso ficam em painéis próprios
 
 O jogo é um único arquivo (`index.html`) e roda inteiro no navegador. O progresso fica salvo só no navegador de cada jogador.
 

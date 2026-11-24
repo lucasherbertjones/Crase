@@ -51,6 +51,27 @@ Uma frase por linha:
   acento grave nem "há", facultativa com duas formas, `pr.plural` só com "a", termo regente ligado a uma
   lacuna, frase com lacuna, sem duplicatas e mínimo por regra.
 
+## Layout e navegação (redesenho de usabilidade)
+- **Uma tarefa por vez.** O cartão central (`.paper`) tem, de cima para baixo: instrução (`#q`: linha pequena
+  "Passo 1 de 2 · …" + pergunta em destaque), frase (`#sent`), opções (`#opts`), resultado (`#fb`) e, por
+  último, ações secundárias discretas (Dica, Pular frase). Instrução fica ACIMA da frase.
+- **Barra superior fixa**: logo · pílula do nível (`#bLevel`: nível, nome e barra de progresso para subir)
+  · pontos e sequência (acertos e frases somem em telas estreitas) · Regras, Progresso e Ajustes.
+- **Nível e ordem não ficam mais na tela de jogo**: ficam na folha "Nível e ajustes" (`openSet`), com os 12
+  níveis em cartões agrupados (forma 1–6, árvore 7–10, escrita 11–12) com descrição, a ordem em duas opções
+  explicadas, "Como jogar" e atalhos de teclado. Os `<select>` antigos foram removidos.
+- **Boas-vindas**: na primeira visita (sem `crase.v1` e sem `crase.intro`) a mesma folha abre em modo
+  "Aprenda crase em 3 passos". Fechar grava `crase.intro=1` (chave separada; o estado do jogo não muda).
+- **Regras e cores**: painel lateral em telas ≥1100 px (fecha com ×/L); abaixo disso vira gaveta inferior
+  com fundo escuro, fechada por padrão (`toggleLegend`, classes `nolegend` e `showleg`). Começa com
+  "Como decidir" e as 4 decisões recolhidas (abrem para mostrar as regras).
+- **Progresso** (`stats`): quatro números no topo, depois acertos por regra, domínio, lacunas para revisar
+  e histórico. Fecha com × ou Esc.
+- **Celular**: folhas e gavetas sobem de baixo; botão "Próxima" ocupa a largura toda; ícones sem texto.
+- **Teclado**: Esc fecha folha, progresso e gaveta; enquanto uma folha está aberta, o jogo não recebe teclas.
+- Testes: `niveis.js` fecha as boas-vindas com Enter e troca nível/ordem pela folha (`#bLevel`,
+  `[data-ord]`, `[data-lv]`); os outros testes gravam `crase.intro=1` para pular as boas-vindas.
+
 ## Mecânicas
 1. **Passo 1 (ordem recomendada, equivalente ao "verbo primeiro")**: para cada lacuna, tocar na palavra
    que exige a preposição "a", ou em "Nenhuma" (tecla 0). As 9 palavras mais próximas da lacuna ganham as
